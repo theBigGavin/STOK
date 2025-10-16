@@ -54,7 +54,7 @@ class ConfigValidator:
     async def validate_database_connection(self):
         """验证数据库连接"""
         try:
-            from backend.src.config.database import db_config
+            from .database import db_config
             engine = db_config.create_engine()
 
             async with engine.connect() as conn:
@@ -70,7 +70,7 @@ class ConfigValidator:
     async def validate_redis_connection(self):
         """验证 Redis 连接"""
         try:
-            from backend.src.config.redis_config import redis_config
+            from .redis_config import redis_config
             success = await redis_config.test_connection()
 
             if success:

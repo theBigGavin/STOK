@@ -1,69 +1,89 @@
 #!/bin/bash
 
-# Stock Trading Backtest Decision System - Development Startup Script
+# 股票回测决策系统开发环境一键启动脚本
+# 使用Docker Compose启动所有服务
 
 set -e
 
-echo "🚀 Starting Stock Trading Backtest Decision System..."
+echo "🚀 启动股票回测决策系统开发环境..."
 
-# Check if Docker is running
-if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker is not running. Please start Docker and try again."
+# 检查Docker是否安装
+if ! command -v docker &> /dev/null; then
+    echo "❌ Docker未安装，请先安装Docker"
     exit 1
 fi
 
-# Create necessary directories
-echo "📁 Creating necessary directories..."
-mkdir -p data/migrations data/seeds logs
-
-# Check if .env file exists
-if [ ! -f "backend/.env" ]; then
-    echo "⚠️  backend/.env file not found. Creating from example..."
-    cp backend/.env.example backend/.env
-    echo "📝 Please update backend/.env with your actual configuration values."
+# 检查Docker Compose是否安装
+if ! command -v docker-compose &> /dev/null; then
+    echo "❌ Docker Compose未安装，请先安装Docker Compose"
+    exit 1
 fi
 
-# Start services with Docker Compose
-echo "🐳 Starting services with Docker Compose..."
-docker-compose up -d
+# 创建必要的目录
+echo "📁 创建必要的目录..."
+mkdir -p logs
+mkdir -p backend/logs
 
-# Wait for services to be ready
-echo "⏳ Waiting for services to be ready..."
+# 停止已运行的服务
+echo "🛑 停止已运行的服务..."
+docker-compose -f docker-compose.dev.yml down
+
+# 构建并启动服务
+echo "🔨 构建和启动服务..."
+docker-compose -f docker-compose.dev.yml up --build -d
+
+# 等待服务启动
+echo "⏳ 等待服务启动..."
 sleep 10
 
-# Check if PostgreSQL is ready
-until docker-compose exec -T postgres pg_isready -U stock_user -d stock_system; do
-    echo "⏳ Waiting for PostgreSQL to be ready..."
-    sleep 5
-done
+# 检查服务状态
+echo "🔍 检查服务状态..."
 
-# Run database migrations
-echo "🗄️  Running database migrations..."
-docker-compose exec api alembic upgrade head
+# 检查PostgreSQL
+if docker-compose -f docker-compose.dev.yml ps postgres | grep -q "Up"; then
+    echo "✅ PostgreSQL 运行正常"
+else
+    echo "❌ PostgreSQL 启动失败"
+    exit 1
+fi
 
-# Seed initial data if needed
-echo "🌱 Seeding initial data..."
-docker-compose exec api python scripts/seed_data.py
+# 检查Redis
+if docker-compose -f docker-compose.dev.yml ps redis | grep -q "Up"; then
+    echo "✅ Redis 运行正常"
+else
+    echo "❌ Redis 启动失败"
+    exit 1
+fi
 
-# Check if all services are running
-echo "🔍 Checking service status..."
-docker-compose ps
+# 检查Backend
+if docker-compose -f docker-compose.dev.yml ps backend | grep -q "Up"; then
+    echo "✅ Backend API 运行正常"
+else
+    echo "❌ Backend API 启动失败"
+    exit 1
+fi
+
+# 等待API完全启动
+echo "⏳ 等待API服务完全启动..."
+sleep 5
+
+# 测试API健康检查
+echo "🧪 测试API健康检查..."
+if curl -s http://localhost:8099/api/v1/health > /dev/null; then
+    echo "✅ API健康检查通过"
+else
+    echo "⚠️  API健康检查失败，但服务可能仍在启动中"
+fi
 
 echo ""
-echo "✅ All services started successfully!"
+echo "🎉 开发环境启动完成！"
 echo ""
-echo "📊 Access the application at:"
-echo "   Frontend: http://localhost:3000"
-echo "   Backend API: http://localhost:8000"
-echo "   API Documentation: http://localhost:8000/docs"
+echo "📊 服务访问地址："
+echo "   - Backend API: http://localhost:8099"
+echo "   - API文档: http://localhost:8099/docs"
+echo "   - PostgreSQL: localhost:5432"
+echo "   - Redis: localhost:6380"
 echo ""
-echo "📋 Useful commands:"
-echo "   View logs: docker-compose logs -f"
-echo "   Stop services: docker-compose down"
-echo "   Restart services: docker-compose restart"
-echo "   Update stock data: docker-compose exec api python scripts/update_stock_data.py"
+echo "🛑 停止服务命令：docker-compose -f docker-compose.dev.yml down"
+echo "📝 查看日志命令：docker-compose -f docker-compose.dev.yml logs -f"
 echo ""
-echo "🎯 Next steps:"
-echo "   1. Update backend/.env with your stock data API credentials"
-echo "   2. Access the frontend and configure your models"
-echo "   3. Run data update script to populate initial stock data"

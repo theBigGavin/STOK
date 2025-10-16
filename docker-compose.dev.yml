@@ -36,6 +36,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8099:8000"
+    env_file:
+      - ./backend/.env.docker
     environment:
       - DATABASE_URL=postgresql+asyncpg://stock_user:stock_pass@postgres:5432/stock_system
       - REDIS_URL=redis://redis:6379/0

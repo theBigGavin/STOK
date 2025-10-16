@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import pandas as pd
 
-from backend.src.models.stock_models import (
+from src.models.stock_models import (
     DecisionType, ModelSignal, ModelType
 )
 
@@ -22,6 +22,7 @@ class BaseBacktestModel(ABC):
         self.model_type: ModelType = ModelType.TECHNICAL
         self.parameters: Dict[str, Any] = {}
         self.is_trained: bool = False
+        self.is_active: bool = True  # 添加is_active属性
         self.performance_metrics: Dict[str, float] = {}
         self.created_at: datetime = datetime.now()
 

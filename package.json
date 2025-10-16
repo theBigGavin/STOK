@@ -1,0 +1,23 @@
+{
+  "name": "stok-api-test",
+  "version": "1.0.0",
+  "description": "STOK后端API全面测试",
+  "main": "api_test.js",
+  "scripts": {
+    "test": "node api_test.js",
+    "test:health": "node -e \"const { testHealthCheck } = require('./api_test'); testHealthCheck().then(() => process.exit(0));\"",
+    "test:stocks": "node -e \"const { testStockAPIs } = require('./api_test'); testStockAPIs().then(() => process.exit(0));\"",
+    "test:models": "node -e \"const { testModelAPIs } = require('./api_test'); testModelAPIs().then(() => process.exit(0));\"",
+    "test:decisions": "node -e \"const { testDecisionAPIs } = require('./api_test'); testDecisionAPIs().then(() => process.exit(0));\"",
+    "test:backtest": "node -e \"const { testBacktestAPIs } = require('./api_test'); testBacktestAPIs().then(() => process.exit(0));\""
+  },
+  "keywords": ["api-test", "stok", "backend"],
+  "author": "Roo",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

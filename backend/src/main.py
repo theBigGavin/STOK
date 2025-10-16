@@ -9,10 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from typing import Dict, Any
 
-from config.database import engine
-from models.database import Base
-from models.stock_models import APIResponse
-from api import stocks, models, decisions, backtest, health
+from src.config.database import engine
+from src.models.database import Base
+from src.models.stock_models import APIResponse
+from src.api import stocks, models, decisions, backtest, health
 
 
 @asynccontextmanager

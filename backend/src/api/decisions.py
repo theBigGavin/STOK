@@ -2,327 +2,433 @@
 决策引擎API
 """
 
-from datetime import date
-from typing import List
+from datetime import date, datetime
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_, or_, desc
+import pandas as pd
 
-from config.database import get_db_session
-from models.stock_models import (
+from src.config.database import get_db_session
+from src.models.stock_models import (
     DecisionRequest, BatchDecisionRequest, FinalDecisionResponse,
     APIResponse, PaginatedResponse
 )
+from src.models.database import Stock, StockDailyData, BacktestModel, ModelDecision, FinalDecision
+from src.services.stock_service import StockService, get_stock_service
+from src.decision_engine.manager import decision_engine_manager
 
 router = APIRouter()
 
 
 @router.post("/decisions/generate", response_model=APIResponse)
 async def generate_decision(
-    decision_request: DecisionRequest,
-    session: AsyncSession = Depends(get_db_session)
+    decision_request: DecisionRequest
 ):
     """生成交易决策"""
-    
-    # 这里应该调用决策引擎服务
-    # 暂时返回模拟响应
-    
-    symbol = decision_request.symbol
-    trade_date = decision_request.trade_date
-    
-    # 模拟决策结果
-    final_decision = {
-        "decision": "BUY",
-        "confidence": 0.78,
-        "vote_summary": {
-            "BUY": 6,
-            "SELL": 2,
-            "HOLD": 2
-        },
-        "model_details": [
-            {
-                "model_id": 1,
-                "decision": "BUY",
-                "confidence": 0.85,
-                "signal_strength": 0.8,
-                "reasoning": "移动平均线金叉"
-            },
-            {
-                "model_id": 2,
-                "decision": "BUY",
-                "confidence": 0.75,
-                "signal_strength": 0.7,
-                "reasoning": "RSI超卖"
-            }
-        ],
-        "risk_level": "MEDIUM",
-        "reasoning": "加权投票通过: 78.0%"
-    }
-    
-    # 模拟风险评估
-    risk_assessment = {
-        "is_approved": True,
-        "risk_level": "MEDIUM",
-        "warnings": ["高波动率风险"],
-        "adjusted_decision": "BUY",
-        "position_suggestion": 0.5
-    }
-    
-    # 模拟模型结果
-    model_results = {
-        "total_models": 10,
-        "active_models": 8,
-        "successful_models": 8,
-        "failed_models": 0
-    }
-    
-    return APIResponse(
-        data={
-            "symbol": symbol,
-            "final_decision": final_decision,
-            "risk_assessment": risk_assessment,
-            "model_results": model_results,
-            "timestamp": trade_date
-        },
-        message="决策生成成功",
-        status="success"
-    )
+    async with get_db_session() as session:
+        symbol = decision_request.symbol
+        trade_date = decision_request.trade_date
+        
+        # 获取股票服务实例
+        stock_service = StockService(session)
+        
+        try:
+            # 获取股票数据
+            end_date = trade_date
+            start_date = end_date - pd.Timedelta(days=60)  # 获取最近60天的数据
+            stock_data = await stock_service.get_stock_data(symbol, start_date, end_date)
+            
+            if stock_data.empty:
+                raise HTTPException(status_code=404, detail=f"股票 {symbol} 在指定日期范围内没有数据")
+            
+            # 使用决策引擎生成决策
+            decision_result = await decision_engine_manager.generate_decision(decision_request, stock_data)
+            
+            if "error" in decision_result:
+                raise HTTPException(status_code=500, detail=decision_result["error"])
+            
+            # 获取股票信息
+            stock = await stock_service.get_stock_by_symbol(symbol)
+            if not stock:
+                raise HTTPException(status_code=404, detail=f"股票 {symbol} 不存在")
+            
+            # 保存决策结果到数据库
+            final_decision_record = FinalDecision(
+                stock_id=stock.id,
+                trade_date=trade_date,
+                buy_votes=decision_result["final_decision"]["vote_summary"].get("BUY", 0),
+                sell_votes=decision_result["final_decision"]["vote_summary"].get("SELL", 0),
+                hold_votes=decision_result["final_decision"]["vote_summary"].get("HOLD", 0),
+                final_decision=decision_result["final_decision"]["decision"],
+                confidence_score=decision_result["final_decision"]["confidence"]
+            )
+            
+            session.add(final_decision_record)
+            await session.commit()
+            await session.refresh(final_decision_record)
+            
+            # 保存模型决策详情
+            for model_detail in decision_result["final_decision"]["model_details"]:
+                model_decision = ModelDecision(
+                    stock_id=final_decision_record.stock_id,
+                    model_id=model_detail["model_id"],
+                    trade_date=trade_date,
+                    decision=model_detail["decision"],
+                    confidence=model_detail["confidence"],
+                    signal_strength=model_detail["signal_strength"]
+                )
+                session.add(model_decision)
+            
+            await session.commit()
+            
+            return APIResponse(
+                data=decision_result,
+                message="决策生成成功",
+                status="success"
+            )
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            await session.rollback()
+            # 记录详细错误信息
+            print(f"POST /decisions/generate 错误: {str(e)}")
+            import traceback
+            print(f"错误堆栈: {traceback.format_exc()}")
+            raise HTTPException(status_code=500, detail=f"决策生成失败: {str(e)}")
 
 
 @router.post("/decisions/batch", response_model=APIResponse)
 async def generate_batch_decisions(
-    batch_request: BatchDecisionRequest,
-    session: AsyncSession = Depends(get_db_session)
+    batch_request: BatchDecisionRequest
 ):
     """批量生成决策"""
-    
-    symbols = batch_request.symbols
-    trade_date = batch_request.trade_date
-    
-    # 这里应该调用批量决策服务
-    # 暂时返回模拟响应
-    
-    batch_results = []
-    
-    for symbol in symbols:
-        # 模拟单个决策结果
-        final_decision = {
-            "decision": "BUY" if symbol.endswith("1") else "HOLD",
-            "confidence": 0.78 if symbol.endswith("1") else 0.45,
-            "vote_summary": {
-                "BUY": 6 if symbol.endswith("1") else 3,
-                "SELL": 2 if symbol.endswith("1") else 3,
-                "HOLD": 2 if symbol.endswith("1") else 4
+    async with get_db_session() as session:
+        symbols = batch_request.symbols
+        trade_date = batch_request.trade_date
+        
+        # 获取股票服务实例
+        stock_service = StockService(session)
+        
+        batch_results = []
+        successful_count = 0
+        
+        for symbol in symbols:
+            try:
+                # 获取股票数据
+                end_date = trade_date
+                start_date = end_date - pd.Timedelta(days=60)  # 获取最近60天的数据
+                stock_data = await stock_service.get_stock_data(symbol, start_date, end_date)
+                
+                if stock_data.empty:
+                    batch_results.append({
+                        "symbol": symbol,
+                        "error": f"股票 {symbol} 在指定日期范围内没有数据",
+                        "final_decision": None,
+                        "risk_assessment": None
+                    })
+                    continue
+                
+                # 创建决策请求
+                decision_request = DecisionRequest(
+                    symbol=symbol,
+                    trade_date=trade_date,
+                    current_position=0.0  # 假设初始仓位为0
+                )
+                
+                # 使用决策引擎生成决策
+                decision_result = await decision_engine_manager.generate_decision(decision_request, stock_data)
+                
+                if "error" in decision_result:
+                    batch_results.append({
+                        "symbol": symbol,
+                        "error": decision_result["error"],
+                        "final_decision": None,
+                        "risk_assessment": None
+                    })
+                    continue
+                
+                # 获取股票信息
+                stock = await stock_service.get_stock_by_symbol(symbol)
+                if not stock:
+                    batch_results.append({
+                        "symbol": symbol,
+                        "error": f"股票 {symbol} 不存在",
+                        "final_decision": None,
+                        "risk_assessment": None
+                    })
+                    continue
+                
+                # 保存决策结果到数据库
+                final_decision_record = FinalDecision(
+                    stock_id=stock.id,
+                    trade_date=trade_date,
+                    buy_votes=decision_result["final_decision"]["vote_summary"].get("BUY", 0),
+                    sell_votes=decision_result["final_decision"]["vote_summary"].get("SELL", 0),
+                    hold_votes=decision_result["final_decision"]["vote_summary"].get("HOLD", 0),
+                    final_decision=decision_result["final_decision"]["decision"],
+                    confidence_score=decision_result["final_decision"]["confidence"]
+                )
+                
+                session.add(final_decision_record)
+                await session.commit()
+                await session.refresh(final_decision_record)
+                
+                # 保存模型决策详情
+                for model_detail in decision_result["final_decision"]["model_details"]:
+                    model_decision = ModelDecision(
+                        stock_id=final_decision_record.stock_id,
+                        model_id=model_detail["model_id"],
+                        trade_date=trade_date,
+                        decision=model_detail["decision"],
+                        confidence=model_detail["confidence"],
+                        signal_strength=model_detail["signal_strength"]
+                    )
+                    session.add(model_decision)
+                
+                await session.commit()
+                
+                batch_results.append(decision_result)
+                successful_count += 1
+                
+            except Exception as e:
+                await session.rollback()
+                batch_results.append({
+                    "symbol": symbol,
+                    "error": f"决策生成失败: {str(e)}",
+                    "final_decision": None,
+                    "risk_assessment": None
+                })
+        
+        return APIResponse(
+            data={
+                "batch_results": batch_results,
+                "total_count": len(symbols),
+                "success_count": successful_count,
+                "timestamp": trade_date
             },
-            "risk_level": "MEDIUM" if symbol.endswith("1") else "LOW"
-        }
-        
-        risk_assessment = {
-            "is_approved": True,
-            "risk_level": "MEDIUM" if symbol.endswith("1") else "LOW",
-            "warnings": ["高波动率风险"] if symbol.endswith("1") else [],
-            "adjusted_decision": "BUY" if symbol.endswith("1") else "HOLD",
-            "position_suggestion": 0.5 if symbol.endswith("1") else 0.2
-        }
-        
-        batch_results.append({
-            "symbol": symbol,
-            "final_decision": final_decision,
-            "risk_assessment": risk_assessment
-        })
-    
-    return APIResponse(
-        data={
-            "batch_results": batch_results,
-            "total_count": len(symbols),
-            "success_count": len(symbols),
-            "timestamp": trade_date
-        },
-        message="批量决策生成完成",
-        status="success"
-    )
+            message=f"批量决策生成完成，成功 {successful_count}/{len(symbols)}",
+            status="success"
+        )
 
 
 @router.get("/decisions/history/{symbol}", response_model=APIResponse)
 async def get_decision_history(
     symbol: str,
     start_date: date,
-    end_date: date,
-    session: AsyncSession = Depends(get_db_session)
+    end_date: date
 ):
     """获取决策历史"""
-    
-    # 这里应该查询数据库中的决策历史
-    # 暂时返回模拟响应
-    
-    # 模拟历史数据
-    history_data = [
-        {
-            "trade_date": "2025-10-15",
-            "final_decision": "HOLD",
-            "confidence_score": 0.45,
-            "vote_summary": {
-                "BUY": 3,
-                "SELL": 3,
-                "HOLD": 4
-            }
-        },
-        {
-            "trade_date": "2025-10-14",
-            "final_decision": "BUY",
-            "confidence_score": 0.72,
-            "vote_summary": {
-                "BUY": 5,
-                "SELL": 2,
-                "HOLD": 3
-            }
-        },
-        {
-            "trade_date": "2025-10-13",
-            "final_decision": "SELL",
-            "confidence_score": 0.68,
-            "vote_summary": {
-                "BUY": 2,
-                "SELL": 6,
-                "HOLD": 2
-            }
-        }
-    ]
-    
-    return APIResponse(
-        data={
-            "symbol": symbol,
-            "history": history_data,
-            "metadata": {
-                "start_date": start_date,
-                "end_date": end_date,
-                "record_count": len(history_data)
-            }
-        },
-        message="获取决策历史成功",
-        status="success"
-    )
+    async with get_db_session() as session:
+        try:
+            # 查询股票信息
+            stock_service = StockService(session)
+            stock = await stock_service.get_stock_by_symbol(symbol)
+            if not stock:
+                raise HTTPException(status_code=404, detail=f"股票 {symbol} 不存在")
+            
+            # 查询决策历史
+            result = await session.execute(
+                select(FinalDecision)
+                .where(
+                    and_(
+                        FinalDecision.stock_id == stock.id,
+                        FinalDecision.trade_date >= start_date,
+                        FinalDecision.trade_date <= end_date
+                    )
+                )
+                .order_by(desc(FinalDecision.trade_date))
+            )
+            decisions = result.scalars().all()
+            
+            # 构建历史数据
+            history_data = []
+            for decision in decisions:
+                history_data.append({
+                    "trade_date": decision.trade_date.isoformat(),
+                    "final_decision": decision.final_decision,
+                    "confidence_score": float(decision.confidence_score) if decision.confidence_score else 0.0,
+                    "vote_summary": {
+                        "BUY": decision.buy_votes or 0,
+                        "SELL": decision.sell_votes or 0,
+                        "HOLD": decision.hold_votes or 0
+                    }
+                })
+            
+            return APIResponse(
+                data={
+                    "symbol": symbol,
+                    "history": history_data,
+                    "metadata": {
+                        "start_date": start_date.isoformat(),
+                        "end_date": end_date.isoformat(),
+                        "record_count": len(history_data)
+                    }
+                },
+                message="获取决策历史成功",
+                status="success"
+            )
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"获取决策历史失败: {str(e)}")
 
 
 @router.get("/decisions/{decision_id}", response_model=APIResponse)
 async def get_decision_detail(
-    decision_id: int,
-    session: AsyncSession = Depends(get_db_session)
+    decision_id: int
 ):
     """获取决策详情"""
-    
-    # 这里应该查询数据库中的决策详情
-    # 暂时返回模拟响应
-    
-    if decision_id <= 0:
-        raise HTTPException(status_code=404, detail=f"决策 {decision_id} 不存在")
-    
-    # 模拟决策详情
-    decision_detail = {
-        "id": decision_id,
-        "symbol": "000001",
-        "trade_date": "2025-10-16",
-        "final_decision": {
-            "decision": "BUY",
-            "confidence": 0.78,
-            "vote_summary": {
-                "BUY": 6,
-                "SELL": 2,
-                "HOLD": 2
-            },
-            "model_details": [
-                {
-                    "model_id": 1,
-                    "model_name": "移动平均线交叉模型",
-                    "decision": "BUY",
-                    "confidence": 0.85,
-                    "signal_strength": 0.8,
-                    "reasoning": "移动平均线金叉"
+    async with get_db_session() as session:
+        try:
+            # 查询最终决策信息
+            final_decision_result = await session.execute(
+                select(FinalDecision, Stock)
+                .join(Stock, FinalDecision.stock_id == Stock.id)
+                .where(FinalDecision.id == decision_id)
+            )
+            final_decision_data = final_decision_result.first()
+            
+            if not final_decision_data:
+                raise HTTPException(status_code=404, detail=f"决策 {decision_id} 不存在")
+            
+            final_decision, stock = final_decision_data
+            
+            # 查询模型决策详情
+            model_decisions_result = await session.execute(
+                select(ModelDecision, BacktestModel)
+                .join(BacktestModel, ModelDecision.model_id == BacktestModel.id)
+                .where(ModelDecision.stock_id == final_decision.stock_id)
+                .where(ModelDecision.trade_date == final_decision.trade_date)
+            )
+            model_decisions = model_decisions_result.all()
+            
+            # 构建模型详情
+            model_details = []
+            for model_decision, backtest_model in model_decisions:
+                model_details.append({
+                    "model_id": backtest_model.id,
+                    "model_name": backtest_model.name,
+                    "decision": model_decision.decision,
+                    "confidence": float(model_decision.confidence) if model_decision.confidence else 0.0,
+                    "signal_strength": float(model_decision.signal_strength) if model_decision.signal_strength else 0.0,
+                    "reasoning": model_decision.reasoning or "无理由说明"
+                })
+            
+            # 计算投票统计
+            vote_summary = {
+                "BUY": final_decision.buy_votes or 0,
+                "SELL": final_decision.sell_votes or 0,
+                "HOLD": final_decision.hold_votes or 0
+            }
+            
+            # 构建决策详情响应
+            decision_detail = {
+                "id": final_decision.id,
+                "symbol": stock.symbol,
+                "trade_date": final_decision.trade_date.isoformat(),
+                "final_decision": {
+                    "decision": final_decision.final_decision or "HOLD",
+                    "confidence": float(final_decision.confidence_score) if final_decision.confidence_score else 0.0,
+                    "vote_summary": vote_summary,
+                    "model_details": model_details,
+                    "risk_level": final_decision.risk_level or "MEDIUM",
+                    "reasoning": f"加权投票结果: {vote_summary}"
                 },
-                {
-                    "model_id": 2,
-                    "model_name": "RSI模型",
-                    "decision": "BUY",
-                    "confidence": 0.75,
-                    "signal_strength": 0.7,
-                    "reasoning": "RSI超卖"
+                "risk_assessment": {
+                    "is_approved": True,  # 需要根据实际风险控制逻辑计算
+                    "risk_level": final_decision.risk_level or "MEDIUM",
+                    "warnings": ["风险控制模块待实现"],  # 需要根据实际风险控制逻辑生成
+                    "adjusted_decision": final_decision.final_decision or "HOLD",
+                    "position_suggestion": 0.5  # 需要根据实际风险控制逻辑计算
                 },
-                {
-                    "model_id": 3,
-                    "model_name": "MACD模型",
-                    "decision": "SELL",
-                    "confidence": 0.65,
-                    "signal_strength": 0.6,
-                    "reasoning": "MACD死叉"
-                }
-            ],
-            "risk_level": "MEDIUM",
-            "reasoning": "加权投票通过: 78.0%"
-        },
-        "risk_assessment": {
-            "is_approved": True,
-            "risk_level": "MEDIUM",
-            "warnings": ["高波动率风险"],
-            "adjusted_decision": "BUY",
-            "position_suggestion": 0.5
-        },
-        "created_at": "2025-10-16T09:30:00Z"
-    }
-    
-    return APIResponse(
-        data=decision_detail,
-        message="获取决策详情成功",
-        status="success"
-    )
+                "created_at": final_decision.created_at.isoformat()
+            }
+            
+            return APIResponse(
+                data=decision_detail,
+                message="获取决策详情成功",
+                status="success"
+            )
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"获取决策详情失败: {str(e)}")
 
 
 @router.get("/decisions", response_model=APIResponse)
 async def get_decisions(
-    symbol: str = None,
-    start_date: date = None,
-    end_date: date = None,
-    decision_type: str = None,
+    symbol: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    decision_type: Optional[str] = None,
     skip: int = 0,
-    limit: int = 100,
-    session: AsyncSession = Depends(get_db_session)
+    limit: int = 100
 ):
     """获取决策列表"""
-    
-    # 这里应该查询数据库中的决策列表
-    # 暂时返回模拟响应
-    
-    # 模拟决策列表
-    decisions_list = [
-        {
-            "id": i + 1,
-            "symbol": f"00000{i+1}",
-            "trade_date": f"2025-10-{16-i}",
-            "final_decision": "BUY" if i % 3 == 0 else "SELL" if i % 3 == 1 else "HOLD",
-            "confidence_score": 0.78 if i % 3 == 0 else 0.65 if i % 3 == 1 else 0.45,
-            "vote_summary": {
-                "BUY": 6 if i % 3 == 0 else 2 if i % 3 == 1 else 3,
-                "SELL": 2 if i % 3 == 0 else 6 if i % 3 == 1 else 3,
-                "HOLD": 2 if i % 3 == 0 else 2 if i % 3 == 1 else 4
-            }
-        }
-        for i in range(min(limit, 10))
-    ]
-    
-    # 应用过滤条件
-    filtered_decisions = decisions_list
-    
-    if symbol:
-        filtered_decisions = [d for d in filtered_decisions if d["symbol"] == symbol]
-    
-    if decision_type:
-        filtered_decisions = [d for d in filtered_decisions if d["final_decision"] == decision_type]
-    
-    return APIResponse(
-        data=PaginatedResponse(
-            data=filtered_decisions[skip:skip+limit],
-            total=len(filtered_decisions),
-            skip=skip,
-            limit=limit
-        ),
-        message="获取决策列表成功",
-        status="success"
-    )
+    async with get_db_session() as session:
+        try:
+            # 构建查询条件
+            query = select(FinalDecision, Stock).join(Stock, FinalDecision.stock_id == Stock.id)
+            conditions = []
+            
+            if symbol:
+                conditions.append(Stock.symbol == symbol)
+            
+            if start_date:
+                conditions.append(FinalDecision.trade_date >= start_date)
+            
+            if end_date:
+                conditions.append(FinalDecision.trade_date <= end_date)
+            
+            if decision_type:
+                conditions.append(FinalDecision.final_decision == decision_type)
+            
+            if conditions:
+                query = query.where(and_(*conditions))
+            
+            # 计算总数
+            count_query = select(FinalDecision.id).select_from(FinalDecision).join(Stock)
+            if conditions:
+                count_query = count_query.where(and_(*conditions))
+            
+            total_result = await session.execute(count_query)
+            total_count = len(total_result.scalars().all())
+            
+            # 获取分页数据
+            query = query.order_by(desc(FinalDecision.trade_date), desc(FinalDecision.id)).offset(skip).limit(limit)
+            result = await session.execute(query)
+            decisions = result.all()
+            
+            # 构建决策列表
+            decisions_list = []
+            for final_decision, stock in decisions:
+                decisions_list.append({
+                    "id": final_decision.id,
+                    "symbol": stock.symbol,
+                    "trade_date": final_decision.trade_date.isoformat(),
+                    "final_decision": final_decision.final_decision,
+                    "confidence_score": float(final_decision.confidence_score) if final_decision.confidence_score else 0.0,
+                    "vote_summary": {
+                        "BUY": final_decision.buy_votes or 0,
+                        "SELL": final_decision.sell_votes or 0,
+                        "HOLD": final_decision.hold_votes or 0
+                    }
+                })
+            
+            return APIResponse(
+                data=PaginatedResponse(
+                    data=decisions_list,
+                    total=total_count,
+                    skip=skip,
+                    limit=limit
+                ),
+                message="获取决策列表成功",
+                status="success"
+            )
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"获取决策列表失败: {str(e)}")

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 from enum import Enum
 
-from backend.src.models.stock_models import (
+from src.models.stock_models import (
     DecisionType, VotingStrategy, ModelSignal, RiskLevel
 )
 

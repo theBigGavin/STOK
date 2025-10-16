@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import date, datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum
+from decimal import Decimal
 
 
 class DecisionType(str, Enum):
@@ -68,12 +69,12 @@ class StockDailyDataBase(BaseModel):
     """股票日线数据基础模型"""
     symbol: str = Field(..., description="股票代码")
     trade_date: date = Field(..., description="交易日期")
-    open_price: float = Field(..., gt=0, description="开盘价")
-    high_price: float = Field(..., gt=0, description="最高价")
-    low_price: float = Field(..., gt=0, description="最低价")
-    close_price: float = Field(..., gt=0, description="收盘价")
+    open_price: Decimal = Field(..., gt=0, description="开盘价")
+    high_price: Decimal = Field(..., gt=0, description="最高价")
+    low_price: Decimal = Field(..., gt=0, description="最低价")
+    close_price: Decimal = Field(..., gt=0, description="收盘价")
     volume: int = Field(..., gt=0, description="成交量")
-    turnover: Optional[float] = Field(None, description="成交额")
+    turnover: Optional[Decimal] = Field(None, description="成交额")
 
 
 class StockDailyDataCreate(StockDailyDataBase):
@@ -83,12 +84,12 @@ class StockDailyDataCreate(StockDailyDataBase):
 
 class StockDailyDataUpdate(BaseModel):
     """股票日线数据更新模型"""
-    open_price: Optional[float] = None
-    high_price: Optional[float] = None
-    low_price: Optional[float] = None
-    close_price: Optional[float] = None
+    open_price: Optional[Decimal] = None
+    high_price: Optional[Decimal] = None
+    low_price: Optional[Decimal] = None
+    close_price: Optional[Decimal] = None
     volume: Optional[int] = None
-    turnover: Optional[float] = None
+    turnover: Optional[Decimal] = None
 
 
 class StockDailyDataResponse(StockDailyDataBase):
@@ -105,7 +106,7 @@ class BacktestModelBase(BaseModel):
     description: Optional[str] = Field(None, description="模型描述")
     model_type: ModelType = Field(..., description="模型类型")
     parameters: Dict[str, Any] = Field(default_factory=dict, description="模型参数")
-    weight: float = Field(1.0, ge=0, le=1, description="模型权重")
+    weight: Decimal = Field(1.0, ge=0, le=1, description="模型权重")
     is_active: bool = Field(True, description="是否活跃")
 
 
@@ -120,7 +121,7 @@ class BacktestModelUpdate(BaseModel):
     description: Optional[str] = None
     model_type: Optional[ModelType] = None
     parameters: Optional[Dict[str, Any]] = None
-    weight: Optional[float] = None
+    weight: Optional[Decimal] = None
     is_active: Optional[bool] = None
 
 
@@ -128,6 +129,8 @@ class BacktestModelResponse(BacktestModelBase):
     """回测模型响应模型"""
     id: int
     created_at: datetime
+    performance_metrics: Optional[Dict[str, Any]] = Field(None, description="性能指标")
+    performance_history: Optional[List[Any]] = Field(None, description="性能历史")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -136,8 +139,8 @@ class ModelSignal(BaseModel):
     """模型信号模型"""
     model_id: int = Field(..., description="模型ID")
     decision: DecisionType = Field(..., description="决策类型")
-    confidence: float = Field(..., ge=0, le=1, description="置信度")
-    signal_strength: float = Field(..., ge=0, le=1, description="信号强度")
+    confidence: Decimal = Field(..., ge=0, le=1, description="置信度")
+    signal_strength: Decimal = Field(..., ge=0, le=1, description="信号强度")
     reasoning: Optional[str] = Field(None, description="决策理由")
 
 
@@ -147,8 +150,8 @@ class ModelDecisionBase(BaseModel):
     trade_date: date = Field(..., description="交易日期")
     model_id: int = Field(..., description="模型ID")
     decision: DecisionType = Field(..., description="决策类型")
-    confidence: float = Field(..., ge=0, le=1, description="置信度")
-    signal_strength: float = Field(..., ge=0, le=1, description="信号强度")
+    confidence: Decimal = Field(..., ge=0, le=1, description="置信度")
+    signal_strength: Decimal = Field(..., ge=0, le=1, description="信号强度")
 
 
 class ModelDecisionCreate(ModelDecisionBase):
@@ -169,7 +172,7 @@ class FinalDecisionBase(BaseModel):
     symbol: str = Field(..., description="股票代码")
     trade_date: date = Field(..., description="交易日期")
     final_decision: DecisionType = Field(..., description="最终决策")
-    confidence_score: float = Field(..., ge=0, le=1, description="综合置信度")
+    confidence_score: Decimal = Field(..., ge=0, le=1, description="综合置信度")
     vote_summary: Dict[str, int] = Field(..., description="投票统计")
     risk_level: RiskLevel = Field(..., description="风险等级")
 
@@ -191,13 +194,13 @@ class ModelPerformanceBase(BaseModel):
     """模型性能基础模型"""
     model_id: int = Field(..., description="模型ID")
     backtest_date: date = Field(..., description="回测日期")
-    accuracy: Optional[float] = Field(None, ge=0, le=1, description="准确率")
-    precision: Optional[float] = Field(None, ge=0, le=1, description="精确率")
-    recall: Optional[float] = Field(None, ge=0, le=1, description="召回率")
-    f1_score: Optional[float] = Field(None, ge=0, le=1, description="F1分数")
-    total_return: Optional[float] = Field(None, description="总收益率")
-    sharpe_ratio: Optional[float] = Field(None, description="夏普比率")
-    max_drawdown: Optional[float] = Field(None, description="最大回撤")
+    accuracy: Optional[Decimal] = Field(None, ge=0, le=1, description="准确率")
+    precision: Optional[Decimal] = Field(None, ge=0, le=1, description="精确率")
+    recall: Optional[Decimal] = Field(None, ge=0, le=1, description="召回率")
+    f1_score: Optional[Decimal] = Field(None, ge=0, le=1, description="F1分数")
+    total_return: Optional[Decimal] = Field(None, description="总收益率")
+    sharpe_ratio: Optional[Decimal] = Field(None, description="夏普比率")
+    max_drawdown: Optional[Decimal] = Field(None, description="最大回撤")
 
 
 class ModelPerformanceCreate(ModelPerformanceBase):
@@ -216,16 +219,16 @@ class ModelPerformanceResponse(ModelPerformanceBase):
 class VotingConfig(BaseModel):
     """投票配置模型"""
     strategy: VotingStrategy = Field(VotingStrategy.WEIGHTED, description="投票策略")
-    threshold: float = Field(0.6, ge=0, le=1, description="决策阈值")
-    min_confidence: float = Field(0.6, ge=0, le=1, description="最小置信度")
+    threshold: Decimal = Field(0.6, ge=0, le=1, description="决策阈值")
+    min_confidence: Decimal = Field(0.6, ge=0, le=1, description="最小置信度")
     enable_risk_control: bool = Field(True, description="启用风险控制")
 
 
 class RiskConfig(BaseModel):
     """风险配置模型"""
-    max_daily_loss: float = Field(0.05, ge=0, le=1, description="最大日亏损")
-    max_position_size: float = Field(0.1, ge=0, le=1, description="最大仓位比例")
-    volatility_threshold: float = Field(0.03, ge=0, description="波动率阈值")
+    max_daily_loss: Decimal = Field(0.05, ge=0, le=1, description="最大日亏损")
+    max_position_size: Decimal = Field(0.1, ge=0, le=1, description="最大仓位比例")
+    volatility_threshold: Decimal = Field(0.03, ge=0, description="波动率阈值")
     enable_circuit_breaker: bool = Field(True, description="启用熔断机制")
 
 
@@ -233,7 +236,7 @@ class DecisionRequest(BaseModel):
     """决策请求模型"""
     symbol: str = Field(..., description="股票代码")
     trade_date: date = Field(..., description="交易日期")
-    current_position: Optional[float] = Field(0.0, ge=0, le=1, description="当前仓位")
+    current_position: Optional[Decimal] = Field(0.0, ge=0, le=1, description="当前仓位")
 
 
 class BatchDecisionRequest(BaseModel):
@@ -247,7 +250,7 @@ class BacktestRequest(BaseModel):
     symbol: str = Field(..., description="股票代码")
     start_date: date = Field(..., description="开始日期")
     end_date: date = Field(..., description="结束日期")
-    initial_capital: float = Field(100000, gt=0, description="初始资金")
+    initial_capital: Decimal = Field(100000, gt=0, description="初始资金")
     model_ids: Optional[List[int]] = Field(None, description="模型ID列表")
 
 
@@ -256,7 +259,7 @@ class PortfolioBacktestRequest(BaseModel):
     symbols: List[str] = Field(..., description="股票代码列表")
     start_date: date = Field(..., description="开始日期")
     end_date: date = Field(..., description="结束日期")
-    initial_capital: float = Field(100000, gt=0, description="初始资金")
+    initial_capital: Decimal = Field(100000, gt=0, description="初始资金")
     rebalance_frequency: str = Field("monthly", description="再平衡频率")
 
 
@@ -265,7 +268,7 @@ class APIResponse(BaseModel):
     data: Optional[Any] = Field(None, description="响应数据")
     message: str = Field(..., description="响应消息")
     status: str = Field(..., description="响应状态")
-    timestamp: datetime = Field(default_factory=datetime.now, description="时间戳")
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat(), description="时间戳")
 
 
 class PaginatedResponse(BaseModel):

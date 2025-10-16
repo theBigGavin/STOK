@@ -81,6 +81,7 @@ class ModelDecision(Base):
     decision: Mapped[str] = mapped_column(String(10), nullable=False)
     confidence: Mapped[Optional[float]] = mapped_column(Numeric(5, 4))
     signal_strength: Mapped[Optional[float]] = mapped_column(Numeric(5, 4))
+    reasoning: Mapped[Optional[str]] = mapped_column(Text, comment="决策理由")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     # 关系
@@ -106,6 +107,7 @@ class FinalDecision(Base):
     hold_votes: Mapped[Optional[int]] = mapped_column(Integer)
     final_decision: Mapped[Optional[str]] = mapped_column(String(10))
     confidence_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 4))
+    risk_level: Mapped[Optional[str]] = mapped_column(String(20), comment="风险等级")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     # 关系
@@ -115,6 +117,7 @@ class FinalDecision(Base):
         UniqueConstraint('stock_id', 'trade_date', name='uq_final_stock_date'),
         CheckConstraint("final_decision IN ('BUY', 'SELL', 'HOLD')", name='chk_final_decision_type'),
         CheckConstraint("confidence_score >= 0 AND confidence_score <= 1", name='chk_final_confidence_range'),
+        CheckConstraint("risk_level IN ('LOW', 'MEDIUM', 'HIGH')", name='chk_risk_level'),
     )
 
 class ModelPerformance(Base):

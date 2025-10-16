@@ -6,8 +6,8 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any
 
-from backend.src.ml_models.base import BaseBacktestModel
-from backend.src.models.stock_models import (
+from src.ml_models.base import BaseBacktestModel
+from src.models.stock_models import (
     DecisionType, ModelSignal, ModelType
 )
 

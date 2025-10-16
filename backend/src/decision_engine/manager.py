@@ -6,12 +6,13 @@ from typing import Dict, List, Optional
 from datetime import date
 import pandas as pd
 
-from backend.src.ml_models.base import ModelManager
-from backend.src.ml_models.technical_models import MovingAverageCrossover, RSIModel, MACDModel
-from backend.src.decision_engine.voting import DecisionEngine, RiskController, VotingConfig
-from backend.src.models.stock_models import (
-    DecisionRequest, FinalDecision, ModelSignal, DecisionType
+from src.ml_models.base import ModelManager
+from src.ml_models.technical_models import MovingAverageCrossover, RSIModel, MACDModel
+from src.decision_engine.voting import DecisionEngine, RiskController, VotingConfig
+from src.models.stock_models import (
+    DecisionRequest, ModelSignal, DecisionType
 )
+from src.decision_engine.voting import FinalDecision
 
 
 class DecisionEngineManager:
@@ -24,6 +25,9 @@ class DecisionEngineManager:
         
         # 注册模型类型
         self._register_model_types()
+        
+        # 初始化默认模型
+        self._initialize_default_models()
 
     def _register_model_types(self):
         """注册模型类型"""
@@ -32,14 +36,35 @@ class DecisionEngineManager:
             'rsi_model': RSIModel,
             'macd_model': MACDModel
         })
+    
+    def _initialize_default_models(self):
+        """初始化默认模型"""
+        try:
+            # 创建默认的技术指标模型
+            self.model_manager.register_model(
+                1, 'moving_average_crossover',
+                short_window=5, long_window=20
+            )
+            self.model_manager.register_model(
+                2, 'rsi_model',
+                period=14, overbought=70, oversold=30
+            )
+            self.model_manager.register_model(
+                3, 'macd_model',
+                fast_period=12, slow_period=26, signal_period=9
+            )
+            print("默认模型初始化成功")
+        except Exception as e:
+            print(f"默认模型初始化失败: {str(e)}")
+            # 即使模型初始化失败，也要继续运行
 
-    async def generate_decision(self, decision_request: DecisionRequest, 
+    async def generate_decision(self, decision_request: DecisionRequest,
                               stock_data: pd.DataFrame) -> Dict:
         """生成交易决策"""
         
         # 获取所有活跃模型
         active_models = [
-            model for model in self.model_manager.models.values() 
+            model for model in self.model_manager.models.values()
             if hasattr(model, 'is_active') and model.is_active
         ]
         
@@ -65,11 +90,13 @@ class DecisionEngineManager:
         # 聚合决策
         final_decision = self.decision_engine.aggregate_decisions(model_signals)
 
-        # 风险评估
+        # 风险评估 - 将Decimal转换为float
+        current_position = float(decision_request.current_position) if decision_request.current_position else 0.0
+
         risk_assessment = self.risk_controller.assess_decision_risk(
-            final_decision, 
+            final_decision,
             decision_request.symbol,
-            decision_request.current_position
+            current_position
         )
 
         return {

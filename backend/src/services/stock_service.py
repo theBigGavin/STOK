@@ -8,9 +8,9 @@ import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
-from backend.src.config.database import get_db_session
-from backend.src.models.database import Stock, StockDailyData
-from backend.src.models.stock_models import StockDailyDataCreate
+from src.config.database import get_db_session
+from src.models.database import Stock, StockDailyData
+from src.models.stock_models import StockDailyDataCreate
 
 
 class StockService:
@@ -236,9 +236,70 @@ class StockService:
         return len(result.scalars().all())
 
 
+    async def get_stock_data_paginated(self, symbol: str, start_date: date, end_date: date, skip: int = 0, limit: int = 1000) -> Dict[str, Any]:
+        """获取股票历史数据（支持分页）"""
+        stock = await self.get_stock_by_symbol(symbol)
+        if not stock:
+            raise ValueError(f"股票 {symbol} 不存在")
+
+        # 查询总记录数
+        count_result = await self.session.execute(
+            select(StockDailyData.id)
+            .where(
+                and_(
+                    StockDailyData.stock_id == stock.id,
+                    StockDailyData.trade_date >= start_date,
+                    StockDailyData.trade_date <= end_date
+                )
+            )
+        )
+        total_count = len(count_result.scalars().all())
+
+        # 查询分页数据
+        result = await self.session.execute(
+            select(StockDailyData)
+            .where(
+                and_(
+                    StockDailyData.stock_id == stock.id,
+                    StockDailyData.trade_date >= start_date,
+                    StockDailyData.trade_date <= end_date
+                )
+            )
+            .order_by(StockDailyData.trade_date.asc())
+            .offset(skip)
+            .limit(limit)
+        )
+        data = result.scalars().all()
+
+        # 转换为DataFrame
+        df_data = []
+        for record in data:
+            df_data.append({
+                'trade_date': record.trade_date,
+                'open_price': float(record.open_price) if record.open_price else None,
+                'high_price': float(record.high_price) if record.high_price else None,
+                'low_price': float(record.low_price) if record.low_price else None,
+                'close_price': float(record.close_price) if record.close_price else None,
+                'volume': record.volume,
+                'turnover': float(record.turnover) if record.turnover else None
+            })
+
+        return {
+            'data': pd.DataFrame(df_data),
+            'pagination': {
+                'total': total_count,
+                'skip': skip,
+                'limit': limit,
+                'has_more': (skip + len(data)) < total_count
+            }
+        }
+
+
 # 依赖函数
 async def get_stock_service(session: AsyncSession = None) -> StockService:
     """获取股票服务实例"""
     if session is None:
-        session = await get_db_session().__anext__()
+        # 正确使用异步上下文管理器
+        async with get_db_session() as session:
+            return StockService(session)
     return StockService(session)

@@ -7,8 +7,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.src.config.database import get_db_session
-from backend.src.models.stock_models import (
+from config.database import get_db_session
+from models.stock_models import (
     DecisionRequest, BatchDecisionRequest, FinalDecisionResponse,
     APIResponse, PaginatedResponse
 )

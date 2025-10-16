@@ -8,9 +8,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from typing import Dict, Any
 
-from backend.src.models.stock_models import APIResponse
-from backend.src.config.database import get_db_session
-from backend.src.config.redis_config import get_redis
+from models.stock_models import APIResponse
+from config.database import get_db_session
+from config.redis_config import get_redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
 

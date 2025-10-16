@@ -8,9 +8,9 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.src.config.database import get_db_session
-from backend.src.models.database import BacktestModel, ModelPerformance
-from backend.src.models.stock_models import (
+from config.database import get_db_session
+from models.database import BacktestModel, ModelPerformance
+from models.stock_models import (
     BacktestModelResponse, BacktestModelCreate, BacktestModelUpdate,
     ModelPerformanceResponse, BacktestRequest, APIResponse, PaginatedResponse
 )

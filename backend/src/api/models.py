@@ -216,19 +216,18 @@ async def delete_model(
 @router.post("/models/{model_id}/backtest", response_model=APIResponse)
 async def run_model_backtest(
     model_id: int,
-    backtest_request: BacktestRequest,
-    session: AsyncSession = Depends(get_db_session)
+    backtest_request: BacktestRequest
 ):
     """运行模型回测"""
-    
-    # 检查模型是否存在
-    result = await session.execute(
-        select(BacktestModel).where(BacktestModel.id == model_id)
-    )
-    model = result.scalar_one_or_none()
-    
-    if not model:
-        raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
+    async with get_db_session() as session:
+        # 检查模型是否存在
+        result = await session.execute(
+            select(BacktestModel).where(BacktestModel.id == model_id)
+        )
+        model = result.scalar_one_or_none()
+        
+        if not model:
+            raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
     
     # 使用股票服务获取真实数据
     stock_service = StockService(session)

@@ -64,30 +64,30 @@ async def get_stocks(
 
 @router.get("/stocks/{symbol}", response_model=APIResponse)
 async def get_stock(
-    symbol: str,
-    session: AsyncSession = Depends(get_db_session)
+    symbol: str
 ):
     """获取股票详情"""
-    try:
-        result = await session.execute(
-            select(Stock).where(Stock.symbol == symbol)
-        )
-        stock = result.scalar_one_or_none()
-        
-        if not stock:
-            raise HTTPException(status_code=404, detail=f"股票 {symbol} 不存在")
-        
-        return APIResponse(
-            data=StockResponse.model_validate(stock),
-            message="获取股票详情成功",
-            status="success"
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        # 记录详细错误信息
-        print(f"GET /stocks/{symbol} 错误: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"服务器内部错误: {str(e)}")
+    async with get_db_session() as session:
+        try:
+            result = await session.execute(
+                select(Stock).where(Stock.symbol == symbol)
+            )
+            stock = result.scalar_one_or_none()
+            
+            if not stock:
+                raise HTTPException(status_code=404, detail=f"股票 {symbol} 不存在")
+            
+            return APIResponse(
+                data=StockResponse.model_validate(stock),
+                message="获取股票详情成功",
+                status="success"
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            # 记录详细错误信息
+            print(f"GET /stocks/{symbol} 错误: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"服务器内部错误: {str(e)}")
 
 
 @router.post("/stocks", response_model=APIResponse)

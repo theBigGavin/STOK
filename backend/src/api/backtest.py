@@ -503,16 +503,15 @@ async def get_backtest_results(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     skip: int = 0,
-    limit: int = 100,
-    session: AsyncSession = Depends(get_db_session)
+    limit: int = 100
 ):
     """获取回测结果列表"""
-    
-    # 构建查询条件
-    conditions = []
-    
-    if model_id:
-        conditions.append(ModelPerformance.model_id == model_id)
+    async with get_db_session() as session:
+        # 构建查询条件
+        conditions = []
+        
+        if model_id:
+            conditions.append(ModelPerformance.model_id == model_id)
     
     if start_date:
         conditions.append(ModelPerformance.backtest_date >= start_date)

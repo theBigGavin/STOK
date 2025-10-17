@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS final_decisions (
     hold_votes INTEGER,
     final_decision VARCHAR(10) CHECK (final_decision IN ('BUY', 'SELL', 'HOLD')),
     confidence_score NUMERIC(5,4) CHECK (confidence_score >= 0 AND confidence_score <= 1),
+    risk_level VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(stock_id, trade_date)
 );

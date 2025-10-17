@@ -61,7 +61,8 @@ async def generate_decision(
                 sell_votes=decision_result["final_decision"]["vote_summary"].get("SELL", 0),
                 hold_votes=decision_result["final_decision"]["vote_summary"].get("HOLD", 0),
                 final_decision=decision_result["final_decision"]["decision"],
-                confidence_score=decision_result["final_decision"]["confidence"]
+                confidence_score=decision_result["final_decision"]["confidence"],
+                risk_level=decision_result["final_decision"]["risk_level"]
             )
             
             session.add(final_decision_record)
@@ -168,7 +169,8 @@ async def generate_batch_decisions(
                     sell_votes=decision_result["final_decision"]["vote_summary"].get("SELL", 0),
                     hold_votes=decision_result["final_decision"]["vote_summary"].get("HOLD", 0),
                     final_decision=decision_result["final_decision"]["decision"],
-                    confidence_score=decision_result["final_decision"]["confidence"]
+                    confidence_score=decision_result["final_decision"]["confidence"],
+                    risk_level=decision_result["final_decision"]["risk_level"]
                 )
                 
                 session.add(final_decision_record)

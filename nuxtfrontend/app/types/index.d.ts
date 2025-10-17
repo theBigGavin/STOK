@@ -1,60 +1,22 @@
-import type { AvatarProps } from '@nuxt/ui'
+/**
+ * 股票回测系统类型定义主文件
+ * 导出所有与股票回测系统相关的类型
+ */
 
-export type UserStatus = 'subscribed' | 'unsubscribed' | 'bounced'
-export type SaleStatus = 'paid' | 'failed' | 'refunded'
+// 导出股票相关类型
+export * from './stocks'
 
-export interface User {
-  id: number
-  name: string
-  email: string
-  avatar?: AvatarProps
-  status: UserStatus
-  location: string
-}
+// 导出决策相关类型
+export * from './decisions'
 
-export interface Mail {
-  id: number
-  unread?: boolean
-  from: User
-  subject: string
-  body: string
-  date: string
-}
+// 导出模型相关类型
+export * from './models'
 
-export interface Member {
-  name: string
-  username: string
-  role: 'member' | 'owner'
-  avatar: AvatarProps
-}
+// 导出回测相关类型
+export * from './backtest'
 
-export interface Stat {
-  title: string
-  icon: string
-  value: number | string
-  variation: number
-  formatter?: (value: number) => string
-}
+// 导出API响应类型
+export * from './api'
 
-export interface Sale {
-  id: string
-  date: string
-  status: SaleStatus
-  email: string
-  amount: number
-}
-
-export interface Notification {
-  id: number
-  unread?: boolean
-  sender: User
-  body: string
-  date: string
-}
-
-export type Period = 'daily' | 'weekly' | 'monthly'
-
-export interface Range {
-  start: Date
-  end: Date
-}
+// 导出查询参数类型
+export * from './query'

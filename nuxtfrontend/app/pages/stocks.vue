@@ -320,7 +320,7 @@ definePageMeta({
 })
 
 // Store
-const stockStore = useStockStore()
+// const stockStore = useStockStore()
 
 // 响应式数据
 const loading = ref(false)
@@ -405,7 +405,7 @@ const selectStock = async (stock: StockInfo) => {
 
 const fetchStockData = async (symbol: string) => {
     try {
-        const endDate = new Date().toISOString().split('T')[0] || ''
+        const endDate: string = new Date().toISOString().split('T')[0] || ''
         let startDate = new Date()
 
         switch (selectedPeriod.value) {
@@ -423,7 +423,7 @@ const fetchStockData = async (symbol: string) => {
                 break
         }
 
-        const startDateStr = startDate.toISOString().split('T')[0] || ''
+        const startDateStr: string = startDate.toISOString().split('T')[0] || ''
         const data = await stockStore.fetchStockDataCached(symbol, startDateStr, endDate)
         stockData.value = data || []
     } catch (err: any) {

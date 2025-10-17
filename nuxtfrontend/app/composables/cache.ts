@@ -25,7 +25,7 @@ interface CacheConfig {
 class CacheManager {
   private cache: Map<string, CacheItem> = new Map()
   private config: Required<CacheConfig>
-  private cleanupTimer?: NodeJS.Timeout
+  private cleanupTimer?: number
 
   constructor(config: CacheConfig = {}) {
     this.config = {

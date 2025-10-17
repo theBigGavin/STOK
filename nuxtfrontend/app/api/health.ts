@@ -8,7 +8,7 @@ import type {
 } from '~/types/api'
 
 // 健康检查响应类型
-interface HealthCheckResponse {
+export interface HealthCheckResponse {
   status: 'healthy' | 'degraded' | 'unhealthy'
   timestamp: string
   services: {
@@ -29,7 +29,7 @@ interface HealthCheckResponse {
 }
 
 // 性能指标类型
-interface PerformanceMetrics {
+export interface PerformanceMetrics {
   timestamp: string
   metrics: {
     requestCount: number
@@ -51,7 +51,7 @@ interface PerformanceMetrics {
 }
 
 // 系统信息类型
-interface SystemInfo {
+export interface SystemInfo {
   version: string
   environment: string
   startTime: string
@@ -78,10 +78,10 @@ interface SystemInfo {
 }
 
 // 日志级别类型
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 // 日志条目类型
-interface LogEntry {
+export interface LogEntry {
   timestamp: string
   level: LogLevel
   message: string

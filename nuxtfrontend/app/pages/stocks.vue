@@ -320,7 +320,7 @@ definePageMeta({
 })
 
 // Store
-// const stockStore = useStockStore()
+const stockStore = useStockStore()
 
 // 响应式数据
 const loading = ref(false)

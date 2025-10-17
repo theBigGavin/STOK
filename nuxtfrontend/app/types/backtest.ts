@@ -43,3 +43,14 @@ export interface Signal {
   model: string;
   confidence: number;
 }
+
+// 回测请求类型
+export interface BacktestRequest {
+  symbol: string
+  startDate: string
+  endDate: string
+  initialCapital: number
+  modelIds?: number[]
+  strategy?: string
+  parameters?: Record<string, any>
+}

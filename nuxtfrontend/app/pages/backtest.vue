@@ -365,7 +365,7 @@ const isFormValid = computed(() => {
     return backtestConfig.value.symbol &&
         backtestConfig.value.startDate &&
         backtestConfig.value.endDate &&
-        backtestConfig.value.modelIds.length > 0
+        backtestConfig.value.modelIds && backtestConfig.value.modelIds.length > 0
 })
 
 // 模型选项
@@ -466,7 +466,7 @@ const tradeColumns = [
         key: 'reason',
         label: '原因'
     }
-] as const
+]
 
 // 方法
 const getModelName = (modelId: number) => {

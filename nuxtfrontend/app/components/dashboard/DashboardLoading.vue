@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onBeforeMount } from 'vue'
 
 // Nuxt运行时配置
 const isClient = typeof window !== 'undefined'

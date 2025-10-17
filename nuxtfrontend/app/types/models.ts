@@ -20,3 +20,18 @@ export interface ModelInfo {
     maxDrawdown?: number;
   };
 }
+
+export interface PerformanceHistory {
+  date: string
+  modelId: number
+  modelName: string
+  metrics: {
+    accuracy?: number
+    precision?: number
+    recall?: number
+    f1Score?: number
+    totalReturn?: number
+    sharpeRatio?: number
+    maxDrawdown?: number
+  }
+}

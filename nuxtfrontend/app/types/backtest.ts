@@ -54,3 +54,9 @@ export interface BacktestRequest {
   strategy?: string
   parameters?: Record<string, any>
 }
+
+export interface EquityCurve {
+  name: string
+  data: EquityPoint[]
+  color: string
+}

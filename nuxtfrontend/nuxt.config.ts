@@ -10,7 +10,6 @@ export default defineNuxtConfig({
       enableAnalytics: process.env.NUXT_PUBLIC_ENABLE_ANALYTICS === 'true'
     }
   },
-
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',

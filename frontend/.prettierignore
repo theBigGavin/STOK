@@ -1,9 +1,0 @@
-dist
-node_modules
-*.md
-*.yml
-*.yaml
-*.json
-*.log
-.DS_Store
-coverage

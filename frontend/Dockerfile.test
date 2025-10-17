@@ -1,0 +1,28 @@
+# 前端测试 Dockerfile
+# 用于运行集成测试的前端服务
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+# 复制依赖文件
+COPY package*.json ./
+
+# 安装依赖
+RUN npm ci
+
+# 复制应用代码
+COPY . .
+
+# 构建应用
+RUN npm run build
+
+# 暴露端口
+EXPOSE 5173
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:5173 || exit 1
+
+# 启动命令
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]

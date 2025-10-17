@@ -1,0 +1,141 @@
+# Docker 集成测试环境配置
+# 用于运行完整的集成测试环境
+
+version: '3.8'
+
+services:
+  # 测试数据库
+  test-database:
+    image: postgres:15-alpine
+    container_name: stok-test-db
+    environment:
+      POSTGRES_DB: stok_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
+      - ./test-data/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d stok_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stok-test-network
+
+  # 测试 Redis
+  test-redis:
+    image: redis:7-alpine
+    container_name: stok-test-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - test_redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - stok-test-network
+
+  # 测试后端服务
+  test-backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.test
+    container_name: stok-test-backend
+    environment:
+      - ENVIRONMENT=test
+      - DATABASE_URL=postgresql://test_user:test_password@test-database:5432/stok_test
+      - REDIS_URL=redis://test-redis:6379/0
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+      - LOG_LEVEL=INFO
+    ports:
+      - "8001:8000"
+    depends_on:
+      test-database:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    volumes:
+      - ../../backend:/app
+      - test_backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - stok-test-network
+
+  # 测试前端服务
+  test-frontend:
+    build:
+      context: ../..
+      dockerfile: frontend/Dockerfile.test
+    container_name: stok-test-frontend
+    environment:
+      - VITE_API_BASE_URL=http://test-backend:8000/api/v1
+      - NODE_ENV=test
+    ports:
+      - "5174:5173"
+    depends_on:
+      test-backend:
+        condition: service_healthy
+    volumes:
+      - ../..:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - stok-test-network
+
+  # 集成测试运行器
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: frontend/Dockerfile.test-runner
+    container_name: stok-test-runner
+    environment:
+      - VITE_API_BASE_URL=http://test-backend:8000/api/v1
+      - NODE_ENV=test
+      - TEST_TIMEOUT=120000
+    depends_on:
+      test-database:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+      test-backend:
+        condition: service_healthy
+      test-frontend:
+        condition: service_healthy
+    volumes:
+      - ../..:/app
+      - /app/node_modules
+      - test_results:/app/test-results
+    networks:
+      - stok-test-network
+
+volumes:
+  test_db_data:
+    driver: local
+  test_redis_data:
+    driver: local
+  test_backend_logs:
+    driver: local
+  test_results:
+    driver: local
+
+networks:
+  stok-test-network:
+    driver: bridge
+    name: stok-test-network

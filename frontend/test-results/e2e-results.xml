@@ -1,0 +1,1643 @@
+<testsuites id="" name="" tests="72" failures="60" skipped="0" errors="0" time="173.00166199999998">
+<testsuite name="routing.test.ts" timestamp="2025-10-17T09:54:42.142Z" hostname="chromium" tests="12" failures="8" skipped="0" time="195.656" errors="0">
+<testcase name="前端路由验证测试 › 应该正确显示 Layout 组件" classname="routing.test.ts" time="5.053">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示侧边栏菜单" classname="routing.test.ts" time="9.593">
+<failure message="routing.test.ts:30:3 应该正确显示侧边栏菜单" type="FAILURE">
+<![CDATA[  [chromium] › routing.test.ts:30:3 › 前端路由验证测试 › 应该正确显示侧边栏菜单 ───────────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.sidebar-menu a[href="/dashboard"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      40 |     for (const item of menuItems) {
+      41 |       const menuItem = page.locator(`.sidebar-menu a[href="${item.path}"]`)
+    > 42 |       await expect(menuItem).toBeVisible()
+         |                              ^
+      43 |       await expect(menuItem).toContainText(item.name)
+      44 |     }
+      45 |   })
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:42:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该能够通过侧边栏导航到所有页面" classname="routing.test.ts" time="30.82">
+<failure message="routing.test.ts:47:3 应该能够通过侧边栏导航到所有页面" type="FAILURE">
+<![CDATA[  [chromium] › routing.test.ts:47:3 › 前端路由验证测试 › 应该能够通过侧边栏导航到所有页面 ──────────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      56 |     for (const pageInfo of pages) {
+      57 |       // 点击侧边栏菜单项
+    > 58 |       await page.click(`.sidebar-menu a[href="${pageInfo.path}"]`)
+         |                  ^
+      59 |       
+      60 |       // 等待页面加载
+      61 |       await page.waitForLoadState('networkidle')
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:58:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示面包屑导航" classname="routing.test.ts" time="30.853">
+<failure message="routing.test.ts:79:3 应该正确显示面包屑导航" type="FAILURE">
+<![CDATA[  [chromium] › routing.test.ts:79:3 › 前端路由验证测试 › 应该正确显示面包屑导航 ───────────────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/stocks"]')
+
+
+      79 |   test('应该正确显示面包屑导航', async ({ page }) => {
+      80 |     // 导航到股票页面
+    > 81 |     await page.click('.sidebar-menu a[href="/stocks"]')
+         |                ^
+      82 |     await page.waitForLoadState('networkidle')
+      83 |     
+      84 |     // 验证面包屑显示
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:81:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-chromium/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确设置页面标题" classname="routing.test.ts" time="7.925">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理 404 页面" classname="routing.test.ts" time="7.816">
+<failure message="routing.test.ts:111:3 应该正确处理 404 页面" type="FAILURE">
+<![CDATA[  [chromium] › routing.test.ts:111:3 › 前端路由验证测试 › 应该正确处理 404 页面 ────────────────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('h1')
+    Expected substring: "页面未找到"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('h1')
+
+
+      115 |     
+      116 |     // 验证显示 404 页面
+    > 117 |     await expect(page.locator('h1')).toContainText('页面未找到')
+          |                                      ^
+      118 |     
+      119 |     // 验证 Layout 组件仍然存在
+      120 |     await expect(page.locator('.sidebar')).toBeVisible()
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:117:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-chromium/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该支持响应式设计" classname="routing.test.ts" time="1.583">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确切换侧边栏折叠状态" classname="routing.test.ts" time="31.091">
+<failure message="routing.test.ts:138:3 应该正确切换侧边栏折叠状态" type="FAILURE">
+<![CDATA[  [chromium] › routing.test.ts:138:3 › 前端路由验证测试 › 应该正确切换侧边栏折叠状态 ────────────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.header-left button[icon]')
+
+
+      143 |     // 点击折叠按钮
+      144 |     const toggleButton = page.locator('.header-left button[icon]')
+    > 145 |     await toggleButton.click()
+          |                        ^
+      146 |     
+      147 |     // 验证侧边栏折叠
+      148 |     await expect(sidebar).toHaveClass(/sidebar-collapsed/)
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:145:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该保持用户状态在页面切换时" classname="routing.test.ts" time="31.45">
+<failure message="routing.test.ts:155:3 应该保持用户状态在页面切换时" type="FAILURE">
+<![CDATA[  [chromium] › routing.test.ts:155:3 › 前端路由验证测试 › 应该保持用户状态在页面切换时 ───────────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      155 |   test('应该保持用户状态在页面切换时', async ({ page }) => {
+      156 |     // 导航到不同页面
+    > 157 |     await page.click('.sidebar-menu a[href="/dashboard"]')
+          |                ^
+      158 |     await page.waitForLoadState('networkidle')
+      159 |     
+      160 |     // 验证用户信息显示
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:157:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理主题切换" classname="routing.test.ts" time="7.005">
+<failure message="routing.test.ts:172:3 应该正确处理主题切换" type="FAILURE">
+<![CDATA[  [chromium] › routing.test.ts:172:3 › 前端路由验证测试 › 应该正确处理主题切换 ───────────────────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.header-right button:has-text("暗色")')
+    Expected substring: "亮色"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('.header-right button:has-text("暗色")')
+
+
+      179 |     
+      180 |     // 验证按钮文本变化
+    > 181 |     await expect(themeButton).toContainText('亮色')
+          |                               ^
+      182 |   })
+      183 | })
+      184 |
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:181:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-chromium/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="路由性能测试 › 页面切换应该在合理时间内完成" classname="routing.test.ts" time="31.013">
+<failure message="routing.test.ts:186:3 页面切换应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [chromium] › routing.test.ts:186:3 › 路由性能测试 › 页面切换应该在合理时间内完成 ─────────────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      193 |       const startTime = Date.now()
+      194 |       
+    > 195 |       await page.click(`.sidebar-menu a[href="${path}"]`)
+          |                  ^
+      196 |       await page.waitForLoadState('networkidle')
+      197 |       
+      198 |       const endTime = Date.now()
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:195:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-chromium/video.webm]]
+
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="路由性能测试 › 初始页面加载应该在合理时间内完成" classname="routing.test.ts" time="1.454">
+</testcase>
+</testsuite>
+<testsuite name="routing.test.ts" timestamp="2025-10-17T09:54:42.142Z" hostname="firefox" tests="12" failures="12" skipped="0" time="0.054" errors="0">
+<testcase name="前端路由验证测试 › 应该正确显示 Layout 组件" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:16:3 应该正确显示 Layout 组件" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:16:3 › 前端路由验证测试 › 应该正确显示 Layout 组件 ───────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示侧边栏菜单" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:30:3 应该正确显示侧边栏菜单" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:30:3 › 前端路由验证测试 › 应该正确显示侧边栏菜单 ────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该能够通过侧边栏导航到所有页面" classname="routing.test.ts" time="0.003">
+<failure message="routing.test.ts:47:3 应该能够通过侧边栏导航到所有页面" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:47:3 › 前端路由验证测试 › 应该能够通过侧边栏导航到所有页面 ───────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示面包屑导航" classname="routing.test.ts" time="0.005">
+<failure message="routing.test.ts:79:3 应该正确显示面包屑导航" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:79:3 › 前端路由验证测试 › 应该正确显示面包屑导航 ────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确设置页面标题" classname="routing.test.ts" time="0.003">
+<failure message="routing.test.ts:91:3 应该正确设置页面标题" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:91:3 › 前端路由验证测试 › 应该正确设置页面标题 ─────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理 404 页面" classname="routing.test.ts" time="0.026">
+<failure message="routing.test.ts:111:3 应该正确处理 404 页面" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:111:3 › 前端路由验证测试 › 应该正确处理 404 页面 ─────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该支持响应式设计" classname="routing.test.ts" time="0.003">
+<failure message="routing.test.ts:124:3 应该支持响应式设计" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:124:3 › 前端路由验证测试 › 应该支持响应式设计 ─────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确切换侧边栏折叠状态" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:138:3 应该正确切换侧边栏折叠状态" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:138:3 › 前端路由验证测试 › 应该正确切换侧边栏折叠状态 ─────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该保持用户状态在页面切换时" classname="routing.test.ts" time="0.003">
+<failure message="routing.test.ts:155:3 应该保持用户状态在页面切换时" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:155:3 › 前端路由验证测试 › 应该保持用户状态在页面切换时 ────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理主题切换" classname="routing.test.ts" time="0.004">
+<failure message="routing.test.ts:172:3 应该正确处理主题切换" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:172:3 › 前端路由验证测试 › 应该正确处理主题切换 ────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="路由性能测试 › 页面切换应该在合理时间内完成" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:186:3 页面切换应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:186:3 › 路由性能测试 › 页面切换应该在合理时间内完成 ──────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="路由性能测试 › 初始页面加载应该在合理时间内完成" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:206:3 初始页面加载应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [firefox] › routing.test.ts:206:3 › 路由性能测试 › 初始页面加载应该在合理时间内完成 ────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/firefox-1495/firefox/Nightly.app/Contents/MacOS/firefox
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="routing.test.ts" timestamp="2025-10-17T09:54:42.142Z" hostname="webkit" tests="12" failures="12" skipped="0" time="0.022" errors="0">
+<testcase name="前端路由验证测试 › 应该正确显示 Layout 组件" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:16:3 应该正确显示 Layout 组件" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:16:3 › 前端路由验证测试 › 应该正确显示 Layout 组件 ────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示侧边栏菜单" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:30:3 应该正确显示侧边栏菜单" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:30:3 › 前端路由验证测试 › 应该正确显示侧边栏菜单 ─────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该能够通过侧边栏导航到所有页面" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:47:3 应该能够通过侧边栏导航到所有页面" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:47:3 › 前端路由验证测试 › 应该能够通过侧边栏导航到所有页面 ────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示面包屑导航" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:79:3 应该正确显示面包屑导航" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:79:3 › 前端路由验证测试 › 应该正确显示面包屑导航 ─────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确设置页面标题" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:91:3 应该正确设置页面标题" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:91:3 › 前端路由验证测试 › 应该正确设置页面标题 ──────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理 404 页面" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:111:3 应该正确处理 404 页面" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:111:3 › 前端路由验证测试 › 应该正确处理 404 页面 ──────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该支持响应式设计" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:124:3 应该支持响应式设计" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:124:3 › 前端路由验证测试 › 应该支持响应式设计 ──────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确切换侧边栏折叠状态" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:138:3 应该正确切换侧边栏折叠状态" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:138:3 › 前端路由验证测试 › 应该正确切换侧边栏折叠状态 ──────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该保持用户状态在页面切换时" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:155:3 应该保持用户状态在页面切换时" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:155:3 › 前端路由验证测试 › 应该保持用户状态在页面切换时 ─────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理主题切换" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:172:3 应该正确处理主题切换" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:172:3 › 前端路由验证测试 › 应该正确处理主题切换 ─────────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="路由性能测试 › 页面切换应该在合理时间内完成" classname="routing.test.ts" time="0.003">
+<failure message="routing.test.ts:186:3 页面切换应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:186:3 › 路由性能测试 › 页面切换应该在合理时间内完成 ───────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="路由性能测试 › 初始页面加载应该在合理时间内完成" classname="routing.test.ts" time="0.004">
+<failure message="routing.test.ts:206:3 初始页面加载应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [webkit] › routing.test.ts:206:3 › 路由性能测试 › 初始页面加载应该在合理时间内完成 ─────────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="routing.test.ts" timestamp="2025-10-17T09:54:42.142Z" hostname="Mobile Chrome" tests="12" failures="8" skipped="0" time="188.372" errors="0">
+<testcase name="前端路由验证测试 › 应该正确显示 Layout 组件" classname="routing.test.ts" time="2.262">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示侧边栏菜单" classname="routing.test.ts" time="7.48">
+<failure message="routing.test.ts:30:3 应该正确显示侧边栏菜单" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › routing.test.ts:30:3 › 前端路由验证测试 › 应该正确显示侧边栏菜单 ──────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.sidebar-menu a[href="/dashboard"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      40 |     for (const item of menuItems) {
+      41 |       const menuItem = page.locator(`.sidebar-menu a[href="${item.path}"]`)
+    > 42 |       await expect(menuItem).toBeVisible()
+         |                              ^
+      43 |       await expect(menuItem).toContainText(item.name)
+      44 |     }
+      45 |   })
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:42:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-Mobile-Chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-Mobile-Chrome/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-Mobile-Chrome/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-Mobile-Chrome/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-Mobile-Chrome/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-Mobile-Chrome/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该能够通过侧边栏导航到所有页面" classname="routing.test.ts" time="31.511">
+<failure message="routing.test.ts:47:3 应该能够通过侧边栏导航到所有页面" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › routing.test.ts:47:3 › 前端路由验证测试 › 应该能够通过侧边栏导航到所有页面 ─────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      56 |     for (const pageInfo of pages) {
+      57 |       // 点击侧边栏菜单项
+    > 58 |       await page.click(`.sidebar-menu a[href="${pageInfo.path}"]`)
+         |                  ^
+      59 |       
+      60 |       // 等待页面加载
+      61 |       await page.waitForLoadState('networkidle')
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:58:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-Mobile-Chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-Mobile-Chrome/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-Mobile-Chrome/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-Mobile-Chrome/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-Mobile-Chrome/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-Mobile-Chrome/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示面包屑导航" classname="routing.test.ts" time="30.893">
+<failure message="routing.test.ts:79:3 应该正确显示面包屑导航" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › routing.test.ts:79:3 › 前端路由验证测试 › 应该正确显示面包屑导航 ──────────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/stocks"]')
+
+
+      79 |   test('应该正确显示面包屑导航', async ({ page }) => {
+      80 |     // 导航到股票页面
+    > 81 |     await page.click('.sidebar-menu a[href="/stocks"]')
+         |                ^
+      82 |     await page.waitForLoadState('networkidle')
+      83 |     
+      84 |     // 验证面包屑显示
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:81:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-Mobile-Chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-Mobile-Chrome/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-Mobile-Chrome/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-Mobile-Chrome/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-Mobile-Chrome/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-Mobile-Chrome/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确设置页面标题" classname="routing.test.ts" time="6.062">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理 404 页面" classname="routing.test.ts" time="7.996">
+<failure message="routing.test.ts:111:3 应该正确处理 404 页面" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › routing.test.ts:111:3 › 前端路由验证测试 › 应该正确处理 404 页面 ───────────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('h1')
+    Expected substring: "页面未找到"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('h1')
+
+
+      115 |     
+      116 |     // 验证显示 404 页面
+    > 117 |     await expect(page.locator('h1')).toContainText('页面未找到')
+          |                                      ^
+      118 |     
+      119 |     // 验证 Layout 组件仍然存在
+      120 |     await expect(page.locator('.sidebar')).toBeVisible()
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:117:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-Mobile-Chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-Mobile-Chrome/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-Mobile-Chrome/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-Mobile-Chrome/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-Mobile-Chrome/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-Mobile-Chrome/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该支持响应式设计" classname="routing.test.ts" time="1.707">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确切换侧边栏折叠状态" classname="routing.test.ts" time="30.867">
+<failure message="routing.test.ts:138:3 应该正确切换侧边栏折叠状态" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › routing.test.ts:138:3 › 前端路由验证测试 › 应该正确切换侧边栏折叠状态 ───────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.header-left button[icon]')
+
+
+      143 |     // 点击折叠按钮
+      144 |     const toggleButton = page.locator('.header-left button[icon]')
+    > 145 |     await toggleButton.click()
+          |                        ^
+      146 |     
+      147 |     // 验证侧边栏折叠
+      148 |     await expect(sidebar).toHaveClass(/sidebar-collapsed/)
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:145:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-Mobile-Chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-Mobile-Chrome/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-Mobile-Chrome/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-Mobile-Chrome/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-Mobile-Chrome/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-Mobile-Chrome/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该保持用户状态在页面切换时" classname="routing.test.ts" time="30.901">
+<failure message="routing.test.ts:155:3 应该保持用户状态在页面切换时" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › routing.test.ts:155:3 › 前端路由验证测试 › 应该保持用户状态在页面切换时 ──────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      155 |   test('应该保持用户状态在页面切换时', async ({ page }) => {
+      156 |     // 导航到不同页面
+    > 157 |     await page.click('.sidebar-menu a[href="/dashboard"]')
+          |                ^
+      158 |     await page.waitForLoadState('networkidle')
+      159 |     
+      160 |     // 验证用户信息显示
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:157:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-Mobile-Chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-Mobile-Chrome/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-Mobile-Chrome/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-Mobile-Chrome/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-Mobile-Chrome/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-Mobile-Chrome/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理主题切换" classname="routing.test.ts" time="6.848">
+<failure message="routing.test.ts:172:3 应该正确处理主题切换" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › routing.test.ts:172:3 › 前端路由验证测试 › 应该正确处理主题切换 ──────────────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.header-right button:has-text("暗色")')
+    Expected substring: "亮色"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('.header-right button:has-text("暗色")')
+
+
+      179 |     
+      180 |     // 验证按钮文本变化
+    > 181 |     await expect(themeButton).toContainText('亮色')
+          |                               ^
+      182 |   })
+      183 | })
+      184 |
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:181:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-Mobile-Chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-Mobile-Chrome/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-Mobile-Chrome/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-Mobile-Chrome/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-Mobile-Chrome/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-Mobile-Chrome/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="路由性能测试 › 页面切换应该在合理时间内完成" classname="routing.test.ts" time="30.348">
+<failure message="routing.test.ts:186:3 页面切换应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [Mobile Chrome] › routing.test.ts:186:3 › 路由性能测试 › 页面切换应该在合理时间内完成 ────────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      193 |       const startTime = Date.now()
+      194 |       
+    > 195 |       await page.click(`.sidebar-menu a[href="${path}"]`)
+          |                  ^
+      196 |       await page.waitForLoadState('networkidle')
+      197 |       
+      198 |       const endTime = Date.now()
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:195:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-Mobile-Chrome/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-Mobile-Chrome/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-Mobile-Chrome/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-Mobile-Chrome/test-failed-1.png]]
+
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-Mobile-Chrome/video.webm]]
+
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-Mobile-Chrome/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="路由性能测试 › 初始页面加载应该在合理时间内完成" classname="routing.test.ts" time="1.497">
+</testcase>
+</testsuite>
+<testsuite name="routing.test.ts" timestamp="2025-10-17T09:54:42.142Z" hostname="Mobile Safari" tests="12" failures="12" skipped="0" time="0.021" errors="0">
+<testcase name="前端路由验证测试 › 应该正确显示 Layout 组件" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:16:3 应该正确显示 Layout 组件" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:16:3 › 前端路由验证测试 › 应该正确显示 Layout 组件 ─────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示侧边栏菜单" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:30:3 应该正确显示侧边栏菜单" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:30:3 › 前端路由验证测试 › 应该正确显示侧边栏菜单 ──────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该能够通过侧边栏导航到所有页面" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:47:3 应该能够通过侧边栏导航到所有页面" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:47:3 › 前端路由验证测试 › 应该能够通过侧边栏导航到所有页面 ─────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示面包屑导航" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:79:3 应该正确显示面包屑导航" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:79:3 › 前端路由验证测试 › 应该正确显示面包屑导航 ──────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确设置页面标题" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:91:3 应该正确设置页面标题" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:91:3 › 前端路由验证测试 › 应该正确设置页面标题 ───────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理 404 页面" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:111:3 应该正确处理 404 页面" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:111:3 › 前端路由验证测试 › 应该正确处理 404 页面 ───────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该支持响应式设计" classname="routing.test.ts" time="0.001">
+<failure message="routing.test.ts:124:3 应该支持响应式设计" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:124:3 › 前端路由验证测试 › 应该支持响应式设计 ───────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确切换侧边栏折叠状态" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:138:3 应该正确切换侧边栏折叠状态" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:138:3 › 前端路由验证测试 › 应该正确切换侧边栏折叠状态 ───────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该保持用户状态在页面切换时" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:155:3 应该保持用户状态在页面切换时" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:155:3 › 前端路由验证测试 › 应该保持用户状态在页面切换时 ──────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理主题切换" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:172:3 应该正确处理主题切换" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:172:3 › 前端路由验证测试 › 应该正确处理主题切换 ──────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="路由性能测试 › 页面切换应该在合理时间内完成" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:186:3 页面切换应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:186:3 › 路由性能测试 › 页面切换应该在合理时间内完成 ────────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+<testcase name="路由性能测试 › 初始页面加载应该在合理时间内完成" classname="routing.test.ts" time="0.002">
+<failure message="routing.test.ts:206:3 初始页面加载应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [Mobile Safari] › routing.test.ts:206:3 › 路由性能测试 › 初始页面加载应该在合理时间内完成 ──────────────────────────────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/gavin/Library/Caches/ms-playwright/webkit-2215/pw_run.sh
+    ╔═════════════════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright Test or Playwright was just installed or updated. ║
+    ║ Please run the following command to download new browsers:              ║
+    ║                                                                         ║
+    ║     npx playwright install                                              ║
+    ║                                                                         ║
+    ║ <3 Playwright Team                                                      ║
+    ╚═════════════════════════════════════════════════════════════════════════╝
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="routing.test.ts" timestamp="2025-10-17T09:54:42.142Z" hostname="chromium-headless" tests="12" failures="8" skipped="0" time="185.446" errors="0">
+<testcase name="前端路由验证测试 › 应该正确显示 Layout 组件" classname="routing.test.ts" time="1.762">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示侧边栏菜单" classname="routing.test.ts" time="6.879">
+<failure message="routing.test.ts:30:3 应该正确显示侧边栏菜单" type="FAILURE">
+<![CDATA[  [chromium-headless] › routing.test.ts:30:3 › 前端路由验证测试 › 应该正确显示侧边栏菜单 ──────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.sidebar-menu a[href="/dashboard"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      40 |     for (const item of menuItems) {
+      41 |       const menuItem = page.locator(`.sidebar-menu a[href="${item.path}"]`)
+    > 42 |       await expect(menuItem).toBeVisible()
+         |                              ^
+      43 |       await expect(menuItem).toContainText(item.name)
+      44 |     }
+      45 |   })
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:42:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium-headless/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium-headless/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium-headless/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium-headless/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium-headless/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示侧边栏菜单-chromium-headless/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该能够通过侧边栏导航到所有页面" classname="routing.test.ts" time="30.761">
+<failure message="routing.test.ts:47:3 应该能够通过侧边栏导航到所有页面" type="FAILURE">
+<![CDATA[  [chromium-headless] › routing.test.ts:47:3 › 前端路由验证测试 › 应该能够通过侧边栏导航到所有页面 ─────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      56 |     for (const pageInfo of pages) {
+      57 |       // 点击侧边栏菜单项
+    > 58 |       await page.click(`.sidebar-menu a[href="${pageInfo.path}"]`)
+         |                  ^
+      59 |       
+      60 |       // 等待页面加载
+      61 |       await page.waitForLoadState('networkidle')
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:58:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium-headless/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium-headless/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium-headless/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium-headless/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium-headless/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该能够通过侧边栏导航到所有页面-chromium-headless/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确显示面包屑导航" classname="routing.test.ts" time="30.975">
+<failure message="routing.test.ts:79:3 应该正确显示面包屑导航" type="FAILURE">
+<![CDATA[  [chromium-headless] › routing.test.ts:79:3 › 前端路由验证测试 › 应该正确显示面包屑导航 ──────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/stocks"]')
+
+
+      79 |   test('应该正确显示面包屑导航', async ({ page }) => {
+      80 |     // 导航到股票页面
+    > 81 |     await page.click('.sidebar-menu a[href="/stocks"]')
+         |                ^
+      82 |     await page.waitForLoadState('networkidle')
+      83 |     
+      84 |     // 验证面包屑显示
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:81:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-chromium-headless/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-chromium-headless/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确显示面包屑导航-chromium-headless/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-chromium-headless/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-chromium-headless/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确显示面包屑导航-chromium-headless/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确设置页面标题" classname="routing.test.ts" time="5.694">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理 404 页面" classname="routing.test.ts" time="7.103">
+<failure message="routing.test.ts:111:3 应该正确处理 404 页面" type="FAILURE">
+<![CDATA[  [chromium-headless] › routing.test.ts:111:3 › 前端路由验证测试 › 应该正确处理 404 页面 ───────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('h1')
+    Expected substring: "页面未找到"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('h1')
+
+
+      115 |     
+      116 |     // 验证显示 404 页面
+    > 117 |     await expect(page.locator('h1')).toContainText('页面未找到')
+          |                                      ^
+      118 |     
+      119 |     // 验证 Layout 组件仍然存在
+      120 |     await expect(page.locator('.sidebar')).toBeVisible()
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:117:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-chromium-headless/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-chromium-headless/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确处理-404-页面-chromium-headless/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-chromium-headless/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-chromium-headless/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理-404-页面-chromium-headless/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该支持响应式设计" classname="routing.test.ts" time="1.501">
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确切换侧边栏折叠状态" classname="routing.test.ts" time="30.953">
+<failure message="routing.test.ts:138:3 应该正确切换侧边栏折叠状态" type="FAILURE">
+<![CDATA[  [chromium-headless] › routing.test.ts:138:3 › 前端路由验证测试 › 应该正确切换侧边栏折叠状态 ───────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.header-left button[icon]')
+
+
+      143 |     // 点击折叠按钮
+      144 |     const toggleButton = page.locator('.header-left button[icon]')
+    > 145 |     await toggleButton.click()
+          |                        ^
+      146 |     
+      147 |     // 验证侧边栏折叠
+      148 |     await expect(sidebar).toHaveClass(/sidebar-collapsed/)
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:145:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium-headless/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium-headless/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium-headless/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium-headless/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium-headless/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确切换侧边栏折叠状态-chromium-headless/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该保持用户状态在页面切换时" classname="routing.test.ts" time="30.771">
+<failure message="routing.test.ts:155:3 应该保持用户状态在页面切换时" type="FAILURE">
+<![CDATA[  [chromium-headless] › routing.test.ts:155:3 › 前端路由验证测试 › 应该保持用户状态在页面切换时 ──────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      155 |   test('应该保持用户状态在页面切换时', async ({ page }) => {
+      156 |     // 导航到不同页面
+    > 157 |     await page.click('.sidebar-menu a[href="/dashboard"]')
+          |                ^
+      158 |     await page.waitForLoadState('networkidle')
+      159 |     
+      160 |     // 验证用户信息显示
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:157:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium-headless/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium-headless/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium-headless/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium-headless/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium-headless/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该保持用户状态在页面切换时-chromium-headless/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="前端路由验证测试 › 应该正确处理主题切换" classname="routing.test.ts" time="6.627">
+<failure message="routing.test.ts:172:3 应该正确处理主题切换" type="FAILURE">
+<![CDATA[  [chromium-headless] › routing.test.ts:172:3 › 前端路由验证测试 › 应该正确处理主题切换 ──────────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.header-right button:has-text("暗色")')
+    Expected substring: "亮色"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('.header-right button:has-text("暗色")')
+
+
+      179 |     
+      180 |     // 验证按钮文本变化
+    > 181 |     await expect(themeButton).toContainText('亮色')
+          |                               ^
+      182 |   })
+      183 | })
+      184 |
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:181:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-chromium-headless/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-chromium-headless/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-前端路由验证测试-应该正确处理主题切换-chromium-headless/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-chromium-headless/test-failed-1.png]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-chromium-headless/video.webm]]
+
+[[ATTACHMENT|routing-前端路由验证测试-应该正确处理主题切换-chromium-headless/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="路由性能测试 › 页面切换应该在合理时间内完成" classname="routing.test.ts" time="30.862">
+<failure message="routing.test.ts:186:3 页面切换应该在合理时间内完成" type="FAILURE">
+<![CDATA[  [chromium-headless] › routing.test.ts:186:3 › 路由性能测试 › 页面切换应该在合理时间内完成 ────────────────────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('.sidebar-menu a[href="/dashboard"]')
+
+
+      193 |       const startTime = Date.now()
+      194 |       
+    > 195 |       await page.click(`.sidebar-menu a[href="${path}"]`)
+          |                  ^
+      196 |       await page.waitForLoadState('networkidle')
+      197 |       
+      198 |       const endTime = Date.now()
+        at /Users/gavin/workspace/playground/STOK/frontend/tests/e2e/routing.test.ts:195:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-chromium-headless/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-chromium-headless/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/routing-路由性能测试-页面切换应该在合理时间内完成-chromium-headless/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-chromium-headless/test-failed-1.png]]
+
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-chromium-headless/video.webm]]
+
+[[ATTACHMENT|routing-路由性能测试-页面切换应该在合理时间内完成-chromium-headless/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="路由性能测试 › 初始页面加载应该在合理时间内完成" classname="routing.test.ts" time="1.558">
+</testcase>
+</testsuite>
+</testsuites>

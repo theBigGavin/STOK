@@ -1,0 +1,392 @@
+# GitHub Actions 集成测试工作流
+# 在每次推送和拉取请求时运行完整的集成测试套件
+
+name: Integration Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/integration-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/integration-tests.yml'
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # 后端集成测试
+  backend-integration-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: stok_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for PostgreSQL..."
+          until pg_isready -h localhost -p 5432 -U test_user; do
+            sleep 1
+          done
+          echo "PostgreSQL is ready"
+
+          echo "Waiting for Redis..."
+          until redis-cli -h localhost ping | grep -q PONG; do
+            sleep 1
+          done
+          echo "Redis is ready"
+
+      - name: Run database migrations
+        run: |
+          cd backend
+          python -c "
+          import asyncio
+          from src.config.database import engine
+          from src.models.database import Base
+          async def init_db():
+              async with engine.begin() as conn:
+                  await conn.run_sync(Base.metadata.create_all)
+          asyncio.run(init_db())
+          "
+
+      - name: Run backend integration tests
+        run: |
+          cd backend
+          python -m pytest tests/integration/ -v --cov=src --cov-report=xml --cov-report=html
+
+      - name: Upload backend coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  # 前端集成测试
+  frontend-integration-tests:
+    name: Frontend Integration Tests
+    runs-on: ubuntu-latest
+    needs: backend-integration-tests
+
+    services:
+      # 使用之前启动的后端服务
+      backend:
+        image: ${{ github.sha }}-backend-test
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/stok_test
+          REDIS_URL: redis://localhost:6379/0
+          CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+        ports:
+          - 8000:8000
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Wait for backend service
+        run: |
+          echo "Waiting for backend service..."
+          until curl -f http://localhost:8000/api/v1/health; do
+            sleep 5
+          done
+          echo "Backend service is ready"
+
+      - name: Run frontend integration tests
+        run: |
+          cd frontend
+          npm run test:integration:ci
+        env:
+          VITE_API_BASE_URL: http://localhost:8000/api/v1
+          TEST_TIMEOUT: 120000
+
+      - name: Upload frontend test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-integration-test-results
+          path: |
+            frontend/test-results/
+            frontend/coverage/
+          retention-days: 30
+
+  # Docker 集成测试
+  docker-integration-tests:
+    name: Docker Integration Tests
+    runs-on: ubuntu-latest
+    needs: [backend-integration-tests, frontend-integration-tests]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build test images
+        run: |
+          docker build -t stok-backend-test -f backend/Dockerfile.test backend/
+          docker build -t stok-frontend-test -f frontend/Dockerfile.test frontend/
+          docker build -t stok-test-runner -f frontend/Dockerfile.test-runner frontend/
+
+      - name: Run Docker integration tests
+        run: |
+          cd frontend/tests/integration
+          docker-compose -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from test-runner
+
+      - name: Collect Docker test results
+        if: always()
+        run: |
+          docker cp stok-test-runner:/app/test-results ./docker-test-results
+        continue-on-error: true
+
+      - name: Upload Docker test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docker-integration-test-results
+          path: docker-test-results/
+          retention-days: 30
+
+  # 性能测试
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: backend-integration-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: stok_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Start backend service
+        run: |
+          cd backend
+          python src/main.py &
+          sleep 30
+
+      - name: Run performance tests
+        run: |
+          cd frontend
+          npm install
+          npm run test:performance
+        env:
+          VITE_API_BASE_URL: http://localhost:8000/api/v1
+
+      - name: Upload performance test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-test-results
+          path: frontend/performance-results/
+          retention-days: 30
+
+  # 安全测试
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    needs: backend-integration-tests
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: stok_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Start backend service
+        run: |
+          cd backend
+          python src/main.py &
+          sleep 30
+
+      - name: Run security tests
+        run: |
+          cd frontend
+          npm install
+          npm run test:security
+        env:
+          VITE_API_BASE_URL: http://localhost:8000/api/v1
+
+      - name: Upload security test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-test-results
+          path: frontend/security-results/
+          retention-days: 30
+
+  # 测试总结报告
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs:
+      [
+        backend-integration-tests,
+        frontend-integration-tests,
+        docker-integration-tests,
+        performance-tests,
+        security-tests,
+      ]
+    if: always()
+
+    steps:
+      - name: Download test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate test summary
+        run: |
+          echo "# 集成测试总结报告" > test-summary.md
+          echo "" >> test-summary.md
+          echo "## 测试执行状态" >> test-summary.md
+          echo "" >> test-summary.md
+          echo "- ✅ 后端集成测试: ${{ needs.backend-integration-tests.result }}" >> test-summary.md
+          echo "- ✅ 前端集成测试: ${{ needs.frontend-integration-tests.result }}" >> test-summary.md
+          echo "- ✅ Docker集成测试: ${{ needs.docker-integration-tests.result }}" >> test-summary.md
+          echo "- ✅ 性能测试: ${{ needs.performance-tests.result }}" >> test-summary.md
+          echo "- ✅ 安全测试: ${{ needs.security-tests.result }}" >> test-summary.md
+          echo "" >> test-summary.md
+          echo "## 测试覆盖率" >> test-summary.md
+          echo "" >> test-summary.md
+          echo "详细覆盖率报告请查看上传的 artifacts。" >> test-summary.md
+
+          cat test-summary.md
+
+      - name: Upload test summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-summary
+          path: test-summary.md
+          retention-days: 30
+
+      - name: Create GitHub issue on test failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['integration-test-failure']
+            });
+
+            // 检查是否已经有相关的 issue
+            const existingIssue = issues.find(issue => 
+              issue.title.includes('Integration Test Failure') &&
+              issue.body.includes('${{ github.sha }}')
+            );
+
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Integration Test Failure - ${{ github.sha }}`,
+                body: `集成测试在提交 ${{ github.sha }} 失败。\n\n详细测试结果请查看: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+                labels: ['integration-test-failure', 'bug']
+              });
+            }

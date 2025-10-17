@@ -101,10 +101,10 @@ class CacheManager {
    * 启动自动清理
    */
   private startCleanup(): void {
-    this.cleanupTimer = setInterval(() => {
-      this.cleanupExpired()
-      this.cleanupLRU()
-    }, this.config.cleanupInterval)
+    // this.cleanupTimer = setInterval(() => {
+    //   this.cleanupExpired()
+    //   this.cleanupLRU()
+    // }, this.config.cleanupInterval)
   }
 
   /**

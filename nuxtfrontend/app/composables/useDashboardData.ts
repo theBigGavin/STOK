@@ -313,14 +313,14 @@ export const useDashboardData = () => {
   let refreshTimer: ReturnType<typeof setTimeout> | null = null
 
   const startAutoRefresh = () => {
-    if (refreshTimer) clearInterval(refreshTimer)
-    autoRefresh.value = true
+    // if (refreshTimer) clearInterval(refreshTimer)
+    // autoRefresh.value = true
     
-    refreshTimer = setInterval(() => {
-      if (autoRefresh.value) {
-        actions.refreshDashboard()
-      }
-    }, refreshInterval.value)
+    // refreshTimer = setInterval(() => {
+    //   if (autoRefresh.value) {
+    //     actions.refreshDashboard()
+    //   }
+    // }, refreshInterval.value)
   }
 
   const stopAutoRefresh = () => {

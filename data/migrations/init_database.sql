@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS model_decisions (
     decision VARCHAR(10) NOT NULL CHECK (decision IN ('BUY', 'SELL', 'HOLD')),
     confidence NUMERIC(5,4) CHECK (confidence >= 0 AND confidence <= 1),
     signal_strength NUMERIC(5,4) CHECK (signal_strength >= 0 AND signal_strength <= 1),
+    reasoning TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(stock_id, model_id, trade_date)
 );

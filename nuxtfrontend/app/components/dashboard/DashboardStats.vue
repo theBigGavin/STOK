@@ -8,7 +8,7 @@
       :ui="{
         container: 'gap-y-1.5',
         wrapper: 'items-start',
-        leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+        leading: 'p-2.5 rounded-full bg-success/10 ring ring-inset ring-success/25 flex-col',
         title: 'font-normal text-muted text-xs uppercase',
       }"
       class="lg:rounded-none first:rounded-l-lg last:rounded-r-lg hover:z-1"
@@ -30,7 +30,7 @@
       :ui="{
         container: 'gap-y-1.5',
         wrapper: 'items-start',
-        leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+        leading: 'p-2.5 rounded-full bg-success/10 ring ring-inset ring-success/25 flex-col',
         title: 'font-normal text-muted text-xs uppercase',
       }"
       class="lg:rounded-none hover:z-1"
@@ -76,7 +76,7 @@
       :ui="{
         container: 'gap-y-1.5',
         wrapper: 'items-start',
-        leading: 'p-2.5 rounded-full bg-neutral/10 ring ring-inset ring-neutral/25 flex-col',
+        leading: 'p-2.5 rounded-full bg-success/10 ring ring-inset ring-success/25 flex-col',
         title: 'font-normal text-muted text-xs uppercase',
       }"
       class="lg:rounded-none last:rounded-r-lg hover:z-1"

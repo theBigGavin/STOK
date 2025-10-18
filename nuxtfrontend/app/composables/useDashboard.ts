@@ -4,6 +4,7 @@ const _useDashboard = () => {
   const route = useRoute();
   const router = useRouter();
   const isNotificationsSlideoverOpen = ref(false);
+  const showSystemStatus = ref(false);
 
   defineShortcuts({
     'g-h': () => router.push('/'),
@@ -11,17 +12,20 @@ const _useDashboard = () => {
     'g-c': () => router.push('/customers'),
     'g-s': () => router.push('/settings'),
     n: () => (isNotificationsSlideoverOpen.value = !isNotificationsSlideoverOpen.value),
+    s: () => (showSystemStatus.value = !showSystemStatus.value),
   });
 
   watch(
     () => route.fullPath,
     () => {
       isNotificationsSlideoverOpen.value = false;
+      showSystemStatus.value = false;
     }
   );
 
   return {
     isNotificationsSlideoverOpen,
+    showSystemStatus,
   };
 };
 

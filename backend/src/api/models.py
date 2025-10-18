@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from src.config.database import get_db_session
-from src.models.database import BacktestModel, ModelPerformance
+from src.models.database import BacktestModel, ModelPerformance, ModelDecision
 from src.models.stock_models import (
     BacktestModelResponse, BacktestModelCreate, BacktestModelUpdate,
     ModelPerformanceResponse, BacktestRequest, APIResponse, PaginatedResponse
@@ -91,6 +91,83 @@ async def get_models(
                 limit=limit
             ),
             message="获取模型列表成功",
+            status="success"
+        )
+
+@router.get("/models/performance", response_model=APIResponse)
+async def get_all_model_performance():
+    """获取所有模型的性能指标"""
+    async with get_db_session() as session:
+        # 查询所有活跃模型
+        models_result = await session.execute(
+            select(BacktestModel).where(BacktestModel.is_active == True)
+        )
+        active_models = models_result.scalars().all()
+        
+        performance_data = []
+        
+        for model in active_models:
+            # 获取每个模型的最新性能记录
+            perf_result = await session.execute(
+                select(ModelPerformance)
+                .where(ModelPerformance.model_id == model.id)
+                .order_by(ModelPerformance.backtest_date.desc())
+                .limit(1)
+            )
+            latest_perf = perf_result.scalar_one_or_none()
+            
+            # 获取该模型的性能记录总数作为数据点数量
+            count_result = await session.execute(
+                select(ModelPerformance.id).where(ModelPerformance.model_id == model.id)
+            )
+            data_points = len(count_result.scalars().all())
+            
+            # 构建性能指标数据
+            if latest_perf:
+                metrics = {
+                    "accuracy": float(latest_perf.accuracy) if latest_perf.accuracy else None,
+                    "precision": float(latest_perf.precision) if latest_perf.precision else None,
+                    "recall": float(latest_perf.recall) if latest_perf.recall else None,
+                    "f1Score": float(latest_perf.f1_score) if latest_perf.f1_score else None,
+                    "totalReturn": float(latest_perf.total_return) if latest_perf.total_return else None,
+                    "sharpeRatio": float(latest_perf.sharpe_ratio) if latest_perf.sharpe_ratio else None,
+                    "maxDrawdown": float(latest_perf.max_drawdown) if latest_perf.max_drawdown else None,
+                }
+                
+                # 计算胜率（基于决策记录）
+                win_rate_result = await session.execute(
+                    select(ModelDecision)
+                    .where(
+                        ModelDecision.model_id == model.id,
+                        ModelDecision.decision == 'BUY'
+                    )
+                )
+                buy_decisions = win_rate_result.scalars().all()
+                total_decisions_result = await session.execute(
+                    select(ModelDecision).where(ModelDecision.model_id == model.id)
+                )
+                total_decisions = total_decisions_result.scalars().all()
+                
+                win_rate = len(buy_decisions) / len(total_decisions) if total_decisions else 0
+                metrics["winRate"] = float(win_rate)
+                
+                last_updated = latest_perf.backtest_date.isoformat() if latest_perf.backtest_date else ""
+            else:
+                # 如果没有性能记录，返回空的指标
+                metrics = {}
+                last_updated = ""
+            
+            performance_data.append({
+                "modelId": model.id,
+                "modelName": model.name,
+                "metrics": metrics,
+                "lastUpdated": last_updated,
+                "dataPoints": data_points
+            })
+        
+        return APIResponse(
+            data=performance_data,
+            message="获取模型性能指标成功",
             status="success"
         )
 

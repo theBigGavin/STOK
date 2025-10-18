@@ -21,6 +21,79 @@ from src.decision_engine.manager import decision_engine_manager
 router = APIRouter()
 
 
+@router.get("/decisions/stats", response_model=APIResponse)
+async def get_decision_stats(
+    symbol: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None
+):
+    """获取决策统计信息"""
+    async with get_db_session() as session:
+        try:
+            # 构建查询条件
+            query = select(FinalDecision, Stock).join(Stock, FinalDecision.stock_id == Stock.id)
+            conditions = []
+            
+            if symbol:
+                conditions.append(Stock.symbol == symbol)
+            
+            if start_date:
+                conditions.append(FinalDecision.trade_date >= start_date)
+            
+            if end_date:
+                conditions.append(FinalDecision.trade_date <= end_date)
+            
+            if conditions:
+                query = query.where(and_(*conditions))
+            
+            # 执行查询
+            result = await session.execute(query)
+            decisions = result.all()
+            
+            # 计算统计信息
+            total_decisions = len(decisions)
+            buy_count = 0
+            sell_count = 0
+            hold_count = 0
+            total_confidence = 0.0
+            valid_confidence_count = 0
+            
+            for final_decision, stock in decisions:
+                # 统计决策类型
+                if final_decision.final_decision == "BUY":
+                    buy_count += 1
+                elif final_decision.final_decision == "SELL":
+                    sell_count += 1
+                elif final_decision.final_decision == "HOLD":
+                    hold_count += 1
+                
+                # 计算平均置信度
+                if final_decision.confidence_score is not None:
+                    total_confidence += float(final_decision.confidence_score)
+                    valid_confidence_count += 1
+            
+            # 计算平均置信度
+            avg_confidence = total_confidence / valid_confidence_count if valid_confidence_count > 0 else 0.0
+            
+            # 构建返回数据，符合前端期望的格式
+            stats_data = {
+                "totalDecisions": total_decisions,
+                "buyCount": buy_count,
+                "sellCount": sell_count,
+                "holdCount": hold_count,
+                "avgConfidence": round(avg_confidence, 4),
+                "successRate": 0.0  # 目前没有成功率数据，返回0
+            }
+            
+            return APIResponse(
+                data=stats_data,
+                message="获取决策统计成功",
+                status="success"
+            )
+            
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"获取决策统计失败: {str(e)}")
+
 @router.post("/decisions/generate", response_model=APIResponse)
 async def generate_decision(
     decision_request: DecisionRequest
@@ -434,3 +507,4 @@ async def get_decisions(
             
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"获取决策列表失败: {str(e)}")
+

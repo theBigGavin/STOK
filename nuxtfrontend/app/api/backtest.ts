@@ -240,12 +240,9 @@ export const backtestApi = {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
-      const response = await request(
-        `/backtest/${backtestId}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const response = await request(`/backtest/${backtestId}`, {
+        method: 'DELETE',
+      });
 
       if (!response.data) {
         throw new Error('API响应数据为空');

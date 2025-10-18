@@ -1,438 +1,443 @@
 <template>
-  <div>
-    <UDashboardPage>
-      <UDashboardPanel grow>
-        <UDashboardNavbar title="股票监控" :ui="{ right: 'gap-3' }">
-          <template #right>
-            <UButton
-              label="刷新数据"
-              color="primary"
-              variant="solid"
-              icon="i-lucide-refresh-cw"
-              :loading="loading"
-              @click="refreshAllData"
-            />
-            <UButton
-              label="批量刷新"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-download"
-              @click="showBatchRefreshModal = true"
-            />
-            <UButton
-              label="导出数据"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-file-text"
-              @click="exportData"
-            />
-          </template>
-        </UDashboardNavbar>
+  <UDashboardPanel id="stocks">
+    <template #header>
+      <UDashboardNavbar title="股票监控" :ui="{ right: 'gap-3' }">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
 
-        <UDashboardPanelContent>
-          <!-- 筛选工具栏 -->
-          <UDashboardSection title="筛选条件" description="按市场、状态和关键词筛选股票">
-            <div class="bg-white rounded-lg border border-gray-200 p-4">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <!-- 市场筛选 -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">市场</label>
-                  <USelect
-                    v-model="filters.market"
-                    :options="marketOptions"
-                    placeholder="全部市场"
-                    clearable
-                  />
-                </div>
+        <template #right>
+          <UButton
+            label="刷新数据"
+            color="primary"
+            variant="solid"
+            icon="i-lucide-refresh-cw"
+            :loading="loading"
+            @click="refreshAllData"
+          />
+          <UButton
+            label="批量刷新"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-download"
+            @click="showBatchRefreshModal = true"
+          />
+          <UButton
+            label="导出数据"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-file-text"
+            @click="exportData"
+          />
+        </template>
+      </UDashboardNavbar>
+    </template>
 
-                <!-- 状态筛选 -->
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">状态</label>
-                  <USelect
-                    v-model="filters.status"
-                    :options="statusOptions"
-                    placeholder="全部状态"
-                    clearable
-                  />
-                </div>
-
-                <!-- 关键词搜索 -->
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">搜索</label>
-                  <UInput
-                    v-model="filters.searchQuery"
-                    placeholder="输入股票代码或名称..."
-                    icon="i-lucide-search"
-                    :loading="loading"
-                  />
-                </div>
+    <template #body>
+      <UDashboardPanelContent>
+        <!-- 筛选工具栏 -->
+        <UDashboardSection title="筛选条件" description="按市场、状态和关键词筛选股票">
+          <div class="bg-white rounded-lg border border-gray-200 p-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <!-- 市场筛选 -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">市场</label>
+                <USelect
+                  v-model="filters.market"
+                  :options="marketOptions"
+                  placeholder="全部市场"
+                  clearable
+                />
               </div>
 
-              <!-- 筛选操作 -->
-              <div class="flex justify-between items-center mt-4">
-                <div class="text-sm text-gray-500">共 {{ filteredStocks.length }} 只股票</div>
-                <div class="flex gap-2">
-                  <UButton
-                    label="重置筛选"
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    @click="resetFilters"
+              <!-- 状态筛选 -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">状态</label>
+                <USelect
+                  v-model="filters.status"
+                  :options="statusOptions"
+                  placeholder="全部状态"
+                  clearable
+                />
+              </div>
+
+              <!-- 关键词搜索 -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">搜索</label>
+                <UInput
+                  v-model="filters.searchQuery"
+                  placeholder="输入股票代码或名称..."
+                  icon="i-lucide-search"
+                  :loading="loading"
+                />
+              </div>
+            </div>
+
+            <!-- 筛选操作 -->
+            <div class="flex justify-between items-center mt-4">
+              <div class="text-sm text-gray-500">共 {{ filteredStocks.length }} 只股票</div>
+              <div class="flex gap-2">
+                <UButton
+                  label="重置筛选"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  @click="resetFilters"
+                />
+                <UButton
+                  label="应用筛选"
+                  color="primary"
+                  variant="solid"
+                  size="sm"
+                  @click="applyFilters"
+                />
+              </div>
+            </div>
+          </div>
+        </UDashboardSection>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <!-- 股票列表区域 -->
+          <div class="xl:col-span-2">
+            <UDashboardSection title="股票列表" description="活跃股票列表，支持排序和筛选">
+              <div class="bg-white rounded-lg border border-gray-200">
+                <!-- 加载状态 -->
+                <div v-if="loading" class="flex justify-center py-8">
+                  <UIcon
+                    name="i-heroicons-arrow-path-20-solid"
+                    class="size-6 text-primary animate-spin"
                   />
+                  <span class="ml-2 text-gray-500">加载中...</span>
+                </div>
+
+                <!-- 错误状态 -->
+                <div v-else-if="error" class="text-center py-8 text-red-500">
+                  <UIcon name="i-lucide-alert-circle" class="size-8 mb-2" />
+                  <p>{{ error }}</p>
                   <UButton
-                    label="应用筛选"
+                    label="重试"
                     color="primary"
                     variant="solid"
-                    size="sm"
-                    @click="applyFilters"
+                    class="mt-4"
+                    @click="fetchStocks"
                   />
                 </div>
-              </div>
-            </div>
-          </UDashboardSection>
 
-          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <!-- 股票列表区域 -->
-            <div class="xl:col-span-2">
-              <UDashboardSection title="股票列表" description="活跃股票列表，支持排序和筛选">
-                <div class="bg-white rounded-lg border border-gray-200">
-                  <!-- 加载状态 -->
-                  <div v-if="loading" class="flex justify-center py-8">
-                    <UIcon
-                      name="i-heroicons-arrow-path-20-solid"
-                      class="size-6 text-primary animate-spin"
-                    />
-                    <span class="ml-2 text-gray-500">加载中...</span>
-                  </div>
+                <!-- 空状态 -->
+                <div v-else-if="filteredStocks.length === 0" class="text-center py-8">
+                  <UIcon name="i-lucide-search" class="size-12 text-gray-400 mb-4" />
+                  <p class="text-gray-500">未找到匹配的股票</p>
+                  <UButton
+                    label="重置筛选"
+                    color="primary"
+                    variant="solid"
+                    class="mt-4"
+                    @click="resetFilters"
+                  />
+                </div>
 
-                  <!-- 错误状态 -->
-                  <div v-else-if="error" class="text-center py-8 text-red-500">
-                    <UIcon name="i-lucide-alert-circle" class="size-8 mb-2" />
-                    <p>{{ error }}</p>
-                    <UButton
-                      label="重试"
-                      color="primary"
-                      variant="solid"
-                      class="mt-4"
-                      @click="fetchStocks"
-                    />
-                  </div>
-
-                  <!-- 空状态 -->
-                  <div v-else-if="filteredStocks.length === 0" class="text-center py-8">
-                    <UIcon name="i-lucide-search" class="size-12 text-gray-400 mb-4" />
-                    <p class="text-gray-500">未找到匹配的股票</p>
-                    <UButton
-                      label="重置筛选"
-                      color="primary"
-                      variant="solid"
-                      class="mt-4"
-                      @click="resetFilters"
-                    />
-                  </div>
-
-                  <!-- 股票表格 -->
-                  <div v-else class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                      <thead class="bg-gray-50">
-                        <tr>
-                          <th
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            股票代码
-                          </th>
-                          <th
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            股票名称
-                          </th>
-                          <th
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            市场
-                          </th>
-                          <th
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            状态
-                          </th>
-                          <th
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            创建时间
-                          </th>
-                          <th
-                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            操作
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody class="bg-white divide-y divide-gray-200">
-                        <tr
-                          v-for="stock in filteredStocks"
-                          :key="stock.id"
-                          class="hover:bg-gray-50"
+                <!-- 股票表格 -->
+                <div v-else class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                         >
-                          <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center gap-2">
-                              <span class="font-mono font-semibold text-highlighted">
-                                {{ stock.symbol }}
-                              </span>
-                              <UBadge
-                                v-if="stock.isActive"
-                                color="success"
-                                variant="subtle"
-                                size="xs"
-                              >
-                                活跃
-                              </UBadge>
-                              <UBadge v-else color="neutral" variant="subtle" size="xs">
-                                停用
-                              </UBadge>
-                            </div>
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ stock.name }}
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap">
-                            <UBadge :color="getMarketColor(stock.market)" variant="subtle">
-                              {{ getMarketText(stock.market) }}
+                          股票代码
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          股票名称
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          市场
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          状态
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          创建时间
+                        </th>
+                        <th
+                          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          操作
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <tr v-for="stock in filteredStocks" :key="stock.id" class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="flex items-center gap-2">
+                            <span class="font-mono font-semibold text-highlighted">
+                              {{ stock.symbol }}
+                            </span>
+                            <UBadge
+                              v-if="stock.isActive"
+                              color="success"
+                              variant="subtle"
+                              size="xs"
+                            >
+                              活跃
                             </UBadge>
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ stock.isActive ? '活跃' : '停用' }}
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ formatDate(stock.createdAt) }}
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div class="flex gap-1">
-                              <UButton
-                                icon="i-lucide-eye"
-                                color="neutral"
-                                variant="ghost"
-                                size="sm"
-                                title="查看详情"
-                                @click="selectStock(stock)"
-                              />
-                              <UButton
-                                icon="i-lucide-refresh-cw"
-                                color="neutral"
-                                variant="ghost"
-                                size="sm"
-                                title="刷新数据"
-                                @click="refreshStockData(stock.symbol)"
-                              />
-                              <UButton
-                                icon="i-lucide-chart-line"
-                                color="primary"
-                                variant="ghost"
-                                size="sm"
-                                title="查看图表"
-                                @click="showChart(stock)"
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <!-- 分页 -->
-                    <div
-                      v-if="pagination.total > pagination.limit"
-                      class="flex justify-between items-center p-4 border-t border-gray-200"
-                    >
-                      <div class="text-sm text-gray-500">
-                        显示 {{ Math.min(pagination.skip + 1, pagination.total) }} -
-                        {{ Math.min(pagination.skip + pagination.limit, pagination.total) }} 条，共
-                        {{ pagination.total }} 条
-                      </div>
-                      <UPagination
-                        v-model="pagination.currentPage"
-                        :page-count="pagination.limit"
-                        :total="pagination.total"
-                        @update:model-value="handlePageChange"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </UDashboardSection>
-            </div>
-
-            <!-- 股票详情区域 -->
-            <div class="xl:col-span-1">
-              <UDashboardSection title="股票详情" description="选中股票的详细信息">
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                  <div v-if="selectedStock" class="space-y-4">
-                    <!-- 股票基本信息 -->
-                    <div class="text-center">
-                      <h3 class="text-lg font-semibold text-highlighted">
-                        {{ selectedStock.symbol }}
-                      </h3>
-                      <p class="text-sm text-gray-500">{{ selectedStock.name }}</p>
-                    </div>
-
-                    <!-- 市场信息 -->
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span class="text-gray-500">市场:</span>
-                        <UBadge
-                          :color="getMarketColor(selectedStock.market)"
-                          variant="subtle"
-                          class="ml-2"
-                        >
-                          {{ getMarketText(selectedStock.market) }}
-                        </UBadge>
-                      </div>
-                      <div>
-                        <span class="text-gray-500">状态:</span>
-                        <UBadge
-                          :color="selectedStock.isActive ? 'success' : 'neutral'"
-                          variant="subtle"
-                          class="ml-2"
-                        >
-                          {{ selectedStock.isActive ? '活跃' : '停用' }}
-                        </UBadge>
-                      </div>
-                    </div>
-
-                    <!-- 数据统计 -->
-                    <div class="border-t border-gray-200 pt-4">
-                      <h4 class="text-sm font-medium text-gray-700 mb-2">数据统计</h4>
-                      <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div class="text-center p-2 bg-gray-50 rounded">
-                          <div class="text-lg font-semibold text-highlighted">
-                            {{ stockData.length }}
+                            <UBadge v-else color="neutral" variant="subtle" size="xs">
+                              停用
+                            </UBadge>
                           </div>
-                          <div class="text-xs text-gray-500">数据记录</div>
-                        </div>
-                        <div class="text-center p-2 bg-gray-50 rounded">
-                          <div class="text-lg font-semibold text-highlighted">
-                            {{ latestPrice ? `¥${latestPrice.toFixed(2)}` : '--' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {{ stock.name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <UBadge :color="getMarketColor(stock.market)" variant="subtle">
+                            {{ getMarketText(stock.market) }}
+                          </UBadge>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {{ stock.isActive ? '活跃' : '停用' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {{ formatDate(stock.createdAt) }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div class="flex gap-1">
+                            <UButton
+                              icon="i-lucide-eye"
+                              color="neutral"
+                              variant="ghost"
+                              size="sm"
+                              title="查看详情"
+                              @click="selectStock(stock)"
+                            />
+                            <UButton
+                              icon="i-lucide-refresh-cw"
+                              color="neutral"
+                              variant="ghost"
+                              size="sm"
+                              title="刷新数据"
+                              @click="refreshStockData(stock.symbol)"
+                            />
+                            <UButton
+                              icon="i-lucide-chart-line"
+                              color="primary"
+                              variant="ghost"
+                              size="sm"
+                              title="查看图表"
+                              @click="showChart(stock)"
+                            />
                           </div>
-                          <div class="text-xs text-gray-500">最新价格</div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <!-- 分页 -->
+                  <div
+                    v-if="pagination.total > pagination.limit"
+                    class="flex justify-between items-center p-4 border-t border-gray-200"
+                  >
+                    <div class="text-sm text-gray-500">
+                      显示 {{ Math.min(pagination.skip + 1, pagination.total) }} -
+                      {{ Math.min(pagination.skip + pagination.limit, pagination.total) }} 条，共
+                      {{ pagination.total }} 条
+                    </div>
+                    <UPagination
+                      v-model="pagination.currentPage"
+                      :page-count="pagination.limit"
+                      :total="pagination.total"
+                      @update:model-value="handlePageChange"
+                    />
+                  </div>
+                </div>
+              </div>
+            </UDashboardSection>
+          </div>
+
+          <!-- 股票详情区域 -->
+          <div class="xl:col-span-1">
+            <UDashboardSection title="股票详情" description="选中股票的详细信息">
+              <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <div v-if="selectedStock" class="space-y-4">
+                  <!-- 股票基本信息 -->
+                  <div class="text-center">
+                    <h3 class="text-lg font-semibold text-highlighted">
+                      {{ selectedStock.symbol }}
+                    </h3>
+                    <p class="text-sm text-gray-500">{{ selectedStock.name }}</p>
+                  </div>
+
+                  <!-- 市场信息 -->
+                  <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span class="text-gray-500">市场:</span>
+                      <UBadge
+                        :color="getMarketColor(selectedStock.market)"
+                        variant="subtle"
+                        class="ml-2"
+                      >
+                        {{ getMarketText(selectedStock.market) }}
+                      </UBadge>
+                    </div>
+                    <div>
+                      <span class="text-gray-500">状态:</span>
+                      <UBadge
+                        :color="selectedStock.isActive ? 'success' : 'neutral'"
+                        variant="subtle"
+                        class="ml-2"
+                      >
+                        {{ selectedStock.isActive ? '活跃' : '停用' }}
+                      </UBadge>
+                    </div>
+                  </div>
+
+                  <!-- 数据统计 -->
+                  <div class="border-t border-gray-200 pt-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">数据统计</h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                      <div class="text-center p-2 bg-gray-50 rounded">
+                        <div class="text-lg font-semibold text-highlighted">
+                          {{ stockData.length }}
                         </div>
+                        <div class="text-xs text-gray-500">数据记录</div>
+                      </div>
+                      <div class="text-center p-2 bg-gray-50 rounded">
+                        <div class="text-lg font-semibold text-highlighted">
+                          {{ latestPrice ? `¥${latestPrice.toFixed(2)}` : '--' }}
+                        </div>
+                        <div class="text-xs text-gray-500">最新价格</div>
                       </div>
                     </div>
-
-                    <!-- 操作按钮 -->
-                    <div class="flex gap-2">
-                      <UButton
-                        label="查看图表"
-                        color="primary"
-                        variant="solid"
-                        block
-                        @click="showChart(selectedStock)"
-                      />
-                      <UButton
-                        label="刷新数据"
-                        color="neutral"
-                        variant="outline"
-                        block
-                        @click="refreshStockData(selectedStock.symbol)"
-                      />
-                    </div>
                   </div>
 
-                  <!-- 未选择股票时的提示 -->
-                  <div v-else class="text-center py-8">
-                    <UIcon name="i-lucide-info" class="size-12 text-gray-400 mb-4" />
-                    <p class="text-gray-500">请选择一只股票查看详情</p>
+                  <!-- 操作按钮 -->
+                  <div class="flex gap-2">
+                    <UButton
+                      label="查看图表"
+                      color="primary"
+                      variant="solid"
+                      block
+                      @click="showChart(selectedStock)"
+                    />
+                    <UButton
+                      label="刷新数据"
+                      color="neutral"
+                      variant="outline"
+                      block
+                      @click="refreshStockData(selectedStock.symbol)"
+                    />
                   </div>
                 </div>
-              </UDashboardSection>
 
-              <!-- 价格走势图 -->
-              <UDashboardSection title="价格走势" description="股票价格历史走势">
-                <div class="bg-white rounded-lg border border-gray-200 p-4">
-                  <div v-if="selectedStock && stockData.length > 0" class="h-64">
-                    <!-- 图表容器 -->
-                    <div class="w-full h-full">
-                      <StockPriceChart :data="stockData" :symbol="selectedStock.symbol" />
-                    </div>
+                <!-- 未选择股票时的提示 -->
+                <div v-else class="text-center py-8">
+                  <UIcon name="i-lucide-info" class="size-12 text-gray-400 mb-4" />
+                  <p class="text-gray-500">请选择一只股票查看详情</p>
+                </div>
+              </div>
+            </UDashboardSection>
 
-                    <!-- 时间范围选择 -->
-                    <div class="flex justify-center gap-2 mt-4">
-                      <UButton
-                        v-for="period in timePeriods"
-                        :key="period.value"
-                        :label="period.label"
-                        :color="selectedPeriod === period.value ? 'primary' : 'neutral'"
-                        variant="outline"
-                        size="sm"
-                        @click="changeTimePeriod(period.value)"
-                      />
-                    </div>
+            <!-- 价格走势图 -->
+            <UDashboardSection title="价格走势" description="股票价格历史走势">
+              <div class="bg-white rounded-lg border border-gray-200 p-4">
+                <div v-if="selectedStock && stockData.length > 0" class="h-64">
+                  <!-- 图表容器 -->
+                  <div class="w-full h-full">
+                    <StockPriceChart :data="stockData" :symbol="selectedStock.symbol" />
                   </div>
 
-                  <div v-else class="text-center py-8">
-                    <UIcon name="i-lucide-chart-line" class="size-12 text-gray-400 mb-4" />
-                    <p class="text-gray-500">选择股票查看价格走势</p>
+                  <!-- 时间范围选择 -->
+                  <div class="flex justify-center gap-2 mt-4">
+                    <UButton
+                      v-for="period in timePeriods"
+                      :key="period.value"
+                      :label="period.label"
+                      :color="selectedPeriod === period.value ? 'primary' : 'neutral'"
+                      variant="outline"
+                      size="sm"
+                      @click="changeTimePeriod(period.value)"
+                    />
                   </div>
                 </div>
-              </UDashboardSection>
-            </div>
-          </div>
-        </UDashboardPanelContent>
-      </UDashboardPanel>
-    </UDashboardPage>
 
-    <!-- 批量刷新模态框 -->
-    <UModal v-model="showBatchRefreshModal">
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">批量刷新股票数据</h3>
-            <UButton
-              icon="i-lucide-x"
-              color="neutral"
-              variant="ghost"
-              @click="showBatchRefreshModal = false"
-            />
-          </div>
-        </template>
-
-        <div class="space-y-4">
-          <p class="text-sm text-gray-500">选择要刷新数据的股票范围</p>
-
-          <div class="grid grid-cols-2 gap-4">
-            <UButton
-              label="刷新所有活跃股票"
-              color="primary"
-              variant="outline"
-              @click="batchRefresh('active')"
-            />
-            <UButton
-              label="刷新选中股票"
-              color="neutral"
-              variant="outline"
-              :disabled="!selectedStock"
-              @click="batchRefresh('selected')"
-            />
+                <div v-else class="text-center py-8">
+                  <UIcon name="i-lucide-chart-line" class="size-12 text-gray-400 mb-4" />
+                  <p class="text-gray-500">选择股票查看价格走势</p>
+                </div>
+              </div>
+            </UDashboardSection>
           </div>
         </div>
+      </UDashboardPanelContent>
+    </template>
+  </UDashboardPanel>
 
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton
-              label="取消"
-              color="neutral"
-              variant="ghost"
-              @click="showBatchRefreshModal = false"
-            />
-            <UButton
-              label="开始刷新"
-              color="primary"
-              variant="solid"
-              :loading="batchLoading"
-              @click="startBatchRefresh"
-            />
-          </div>
-        </template>
-      </UCard>
-    </UModal>
-  </div>
+  <!-- 批量刷新模态框 -->
+  <UDrawer
+    v-model:open="showBatchRefreshModal"
+    direction="right"
+    inset
+    :ui="{ container: 'max-w-xl mx-auto' }"
+  >
+    <template #header>
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">批量刷新股票数据</h3>
+        <UButton
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          @click="showBatchRefreshModal = false"
+        />
+      </div>
+    </template>
+
+    <template #content>
+      <div class="space-y-4">
+        <p class="text-sm text-gray-500">选择要刷新数据的股票范围</p>
+
+        <div class="grid grid-cols-2 gap-4">
+          <UButton
+            label="刷新所有活跃股票"
+            color="primary"
+            variant="outline"
+            @click="batchRefresh('active')"
+          />
+          <UButton
+            label="刷新选中股票"
+            color="neutral"
+            variant="outline"
+            :disabled="!selectedStock"
+            @click="batchRefresh('selected')"
+          />
+        </div>
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton
+          label="取消"
+          color="neutral"
+          variant="ghost"
+          @click="showBatchRefreshModal = false"
+        />
+        <UButton
+          label="开始刷新"
+          color="primary"
+          variant="solid"
+          :loading="batchLoading"
+          @click="startBatchRefresh"
+        />
+      </div>
+    </template>
+  </UDrawer>
 </template>
 
 <script setup lang="ts">

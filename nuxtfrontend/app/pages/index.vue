@@ -28,20 +28,6 @@
             />
           </UTooltip>
 
-          <!-- 通知按钮 -->
-          <UTooltip text="通知" :shortcuts="['N']">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              square
-              @click="isNotificationsSlideoverOpen = true"
-            >
-              <UChip color="error" inset>
-                <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
-              </UChip>
-            </UButton>
-          </UTooltip>
-
           <!-- 快速操作菜单 -->
           <UDropdownMenu :items="quickActionItems">
             <UButton icon="i-lucide-plus" size="md" class="rounded-full" />
@@ -99,13 +85,10 @@
 
         <!-- 主要内容区域 -->
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <!-- 左侧列：实时决策和快速操作 -->
+          <!-- 左侧列：实时决策 -->
           <div class="space-y-6">
             <!-- 实时决策 -->
             <DecisionList />
-
-            <!-- 快速操作 -->
-            <QuickActions />
           </div>
 
           <!-- 中间列：模型性能 -->
@@ -114,67 +97,26 @@
             <ModelPerformance />
           </div>
 
-          <!-- 右侧列：系统状态 -->
+          <!-- 右侧列：快速操作 -->
           <div class="space-y-6">
-            <!-- 系统状态面板 -->
-            <SystemStatus />
+            <!-- 快速操作 -->
+            <QuickActions />
           </div>
         </div>
       </div>
     </template>
   </UDashboardPanel>
 
-  <!-- 系统状态模态框 -->
-  <UModal v-model="showSystemStatus">
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">系统状态详情</h3>
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-x"
-            @click="showSystemStatus = false"
-          />
-        </div>
-      </template>
-
-      <div class="space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-          <div class="text-center p-4 rounded-lg border border-default">
-            <div class="text-2xl font-semibold text-highlighted">
-              {{ systemUptime }}
-            </div>
-            <div class="text-sm text-muted">运行时间</div>
-          </div>
-          <div class="text-center p-4 rounded-lg border border-default">
-            <div class="text-2xl font-semibold text-highlighted">{{ memoryUsage }}%</div>
-            <div class="text-sm text-muted">内存使用</div>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <h4 class="font-medium">服务状态</h4>
-          <div class="space-y-2">
-            <div
-              v-for="service in serviceStatus"
-              :key="service.name"
-              class="flex items-center justify-between p-2 rounded border border-default"
-            >
-              <span class="text-sm">{{ service.name }}</span>
-              <UBadge :color="serviceStatusColor(service.status)" variant="subtle" size="xs">
-                {{ serviceStatusText(service.status) }}
-              </UBadge>
-            </div>
-          </div>
-        </div>
-      </div>
-    </UCard>
-  </UModal>
+  <UDrawer v-model:open="showSystemStatus" direction="right" inset>
+    <template #content>
+      <!-- 系统状态面板 -->
+      <SystemStatus />
+    </template>
+  </UDrawer>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useDashboardData } from '~/composables/useDashboardData';
 import { useDashboard } from '~/composables/useDashboard';
 
@@ -192,7 +134,6 @@ const {
   error,
   lastUpdated,
   autoRefresh,
-  systemHealth,
   systemStatusColor,
   startAutoRefresh,
   stopAutoRefresh,
@@ -225,35 +166,6 @@ const quickActionItems = [
 ];
 
 // 计算属性
-const systemUptime = computed(() => {
-  const uptime = systemHealth.value?.system.uptime || 0;
-  if (uptime < 3600) return `${Math.floor(uptime / 60)}分钟`;
-  if (uptime < 86400) return `${Math.floor(uptime / 3600)}小时`;
-  return `${Math.floor(uptime / 86400)}天`;
-});
-
-const memoryUsage = computed(() => {
-  return systemHealth.value?.system.memoryUsage || 0;
-});
-
-const serviceStatus = computed(() => [
-  {
-    name: 'API服务',
-    status: systemHealth.value?.services.api?.status || 'healthy',
-  },
-  {
-    name: '数据库',
-    status: systemHealth.value?.services.database?.status || 'healthy',
-  },
-  {
-    name: 'Redis缓存',
-    status: systemHealth.value?.services.redis?.status || 'healthy',
-  },
-  {
-    name: '模型服务',
-    status: systemHealth.value?.services.models?.status || 'healthy',
-  },
-]);
 
 // 方法
 const formatTime = (timestamp: string) => {
@@ -263,32 +175,6 @@ const formatTime = (timestamp: string) => {
     minute: '2-digit',
     second: '2-digit',
   });
-};
-
-const serviceStatusColor = (status: string) => {
-  switch (status) {
-    case 'healthy':
-      return 'success';
-    case 'degraded':
-      return 'warning';
-    case 'unhealthy':
-      return 'error';
-    default:
-      return 'neutral';
-  }
-};
-
-const serviceStatusText = (status: string) => {
-  switch (status) {
-    case 'healthy':
-      return '正常';
-    case 'degraded':
-      return '降级';
-    case 'unhealthy':
-      return '异常';
-    default:
-      return '未知';
-  }
 };
 
 // 自动刷新逻辑

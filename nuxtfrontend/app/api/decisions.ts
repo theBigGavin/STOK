@@ -6,7 +6,6 @@
 import type { DecisionResult, ModelDecision } from '~/types/decisions';
 import type { DecisionQueryParams } from '~/types/query';
 
-
 // 批量决策响应类型
 interface BatchDecisionResponse {
   decisions: DecisionResult[];

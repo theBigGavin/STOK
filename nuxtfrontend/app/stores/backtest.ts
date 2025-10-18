@@ -8,7 +8,6 @@ import type { BacktestResult, BacktestRequest } from '~/types/backtest';
 import { backtestApi, useCachedBacktestApi } from '~/api/backtest';
 import { useErrorHandler } from '~/composables/errorHandler';
 
-
 // 回测状态接口
 interface BacktestState {
   // 回测结果列表

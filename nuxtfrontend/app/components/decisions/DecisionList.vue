@@ -10,23 +10,30 @@
       <div class="controls">
         <slot name="controls">
           <div class="flex items-center space-x-4">
-            <select v-model="filterDecision"
-              class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <select
+              v-model="filterDecision"
+              class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
               <option value="">全部推荐</option>
               <option value="buy">买入推荐</option>
               <option value="sell">卖出推荐</option>
               <option value="hold">观望推荐</option>
             </select>
 
-            <select v-model="sortBy"
-              class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <select
+              v-model="sortBy"
+              class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
               <option value="confidence">置信度</option>
               <option value="votes">投票数</option>
               <option value="symbol">股票代码</option>
             </select>
 
-            <button @click="refreshRecommendations" :disabled="refreshing"
-              class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+            <button
+              @click="refreshRecommendations"
+              :disabled="refreshing"
+              class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
               {{ refreshing ? '刷新中...' : '刷新推荐' }}
             </button>
           </div>
@@ -50,9 +57,11 @@
         <div class="flex">
           <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd"
+              <path
+                fill-rule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clip-rule="evenodd" />
+                clip-rule="evenodd"
+              />
             </svg>
           </div>
           <div class="ml-3">
@@ -66,20 +75,28 @@
     <!-- 推荐列表 -->
     <div v-else class="list-container">
       <ul class="divide-y divide-gray-200">
-        <li v-for="recommendation in filteredAndSortedRecommendations" :key="recommendation.stock.id"
-          class="recommendation-item hover:bg-gray-50 transition-colors duration-150">
+        <li
+          v-for="recommendation in filteredAndSortedRecommendations"
+          :key="recommendation.stock.id"
+          class="recommendation-item hover:bg-gray-50 transition-colors duration-150"
+        >
           <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <!-- 股票信息 -->
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <div class="decision-badge" :class="decisionBadgeClass(recommendation.decision.decision_type)">
+                  <div
+                    class="decision-badge"
+                    :class="decisionBadgeClass(recommendation.decision.decision_type)"
+                  >
                     {{ decisionLabel(recommendation.decision.decision_type) }}
                   </div>
                 </div>
                 <div class="ml-4">
                   <div class="flex items-center">
-                    <p class="text-sm font-medium text-gray-900">{{ recommendation.stock.symbol }}</p>
+                    <p class="text-sm font-medium text-gray-900">
+                      {{ recommendation.stock.symbol }}
+                    </p>
                     <span class="ml-2 text-xs text-gray-500">{{ recommendation.stock.name }}</span>
                   </div>
                   <div class="flex items-center space-x-4 mt-1">
@@ -89,10 +106,17 @@
                     <p v-if="recommendation.stock.current_price" class="text-sm text-gray-500">
                       当前价: ¥{{ recommendation.stock.current_price.toFixed(2) }}
                     </p>
-                    <p v-if="recommendation.stock.price_change_percent" class="text-sm"
-                      :class="recommendation.stock.price_change_percent >= 0 ? 'text-green-600' : 'text-red-600'">
-                      {{ recommendation.stock.price_change_percent >= 0 ? '+' : '' }}{{
-                        recommendation.stock.price_change_percent.toFixed(2) }}%
+                    <p
+                      v-if="recommendation.stock.price_change_percent"
+                      class="text-sm"
+                      :class="
+                        recommendation.stock.price_change_percent >= 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      "
+                    >
+                      {{ recommendation.stock.price_change_percent >= 0 ? '+' : ''
+                      }}{{ recommendation.stock.price_change_percent.toFixed(2) }}%
                     </p>
                   </div>
                 </div>
@@ -102,9 +126,15 @@
               <div class="flex items-center space-x-4">
                 <div class="vote-summary">
                   <div class="flex items-center space-x-2 text-xs">
-                    <span class="text-green-600">买: {{ recommendation.vote_summary.buy_votes }}</span>
-                    <span class="text-red-600">卖: {{ recommendation.vote_summary.sell_votes }}</span>
-                    <span class="text-gray-600">持: {{ recommendation.vote_summary.hold_votes }}</span>
+                    <span class="text-green-600"
+                      >买: {{ recommendation.vote_summary.buy_votes }}</span
+                    >
+                    <span class="text-red-600"
+                      >卖: {{ recommendation.vote_summary.sell_votes }}</span
+                    >
+                    <span class="text-gray-600"
+                      >持: {{ recommendation.vote_summary.hold_votes }}</span
+                    >
                   </div>
                   <div class="text-xs text-gray-500 mt-1">
                     总投票: {{ recommendation.vote_summary.total_votes }}
@@ -122,13 +152,17 @@
                 <!-- 操作按钮 -->
                 <div class="action-buttons">
                   <slot name="actions" :recommendation="recommendation">
-                    <button class="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                      @click="$emit('recommendation-detail', recommendation)">
+                    <button
+                      class="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                      @click="$emit('recommendation-detail', recommendation)"
+                    >
                       详情
                     </button>
-                    <button v-if="recommendation.decision.decision_type === 'buy'"
+                    <button
+                      v-if="recommendation.decision.decision_type === 'buy'"
                       class="ml-3 text-green-600 hover:text-green-900 text-sm font-medium"
-                      @click="$emit('execute-trade', recommendation)">
+                      @click="$emit('execute-trade', recommendation)"
+                    >
                       执行买入
                     </button>
                   </slot>
@@ -140,9 +174,19 @@
             <div class="mt-3">
               <div class="model-votes">
                 <div class="flex flex-wrap gap-2">
-                  <span v-for="vote in recommendation.vote_details" :key="vote.model_id"
-                    class="inline-flex items-center px-2 py-1 rounded text-xs" :class="modelVoteClass(vote.vote_type)">
-                    {{ vote.vote_type === 'buy' ? '买入' : vote.vote_type === 'sell' ? '卖出' : '观望' }}
+                  <span
+                    v-for="vote in recommendation.vote_details"
+                    :key="vote.model_id"
+                    class="inline-flex items-center px-2 py-1 rounded text-xs"
+                    :class="modelVoteClass(vote.vote_type)"
+                  >
+                    {{
+                      vote.vote_type === 'buy'
+                        ? '买入'
+                        : vote.vote_type === 'sell'
+                          ? '卖出'
+                          : '观望'
+                    }}
                     ({{ (vote.confidence * 100).toFixed(0) }}%)
                   </span>
                 </div>
@@ -160,7 +204,10 @@
                 <span class="text-xs text-gray-500">
                   生成时间: {{ formatDate(recommendation.decision.generated_at) }}
                 </span>
-                <span v-if="recommendation.decision.time_horizon" class="text-xs text-gray-500 ml-4">
+                <span
+                  v-if="recommendation.decision.time_horizon"
+                  class="text-xs text-gray-500 ml-4"
+                >
                   时间周期: {{ recommendation.decision.time_horizon }}天
                 </span>
               </div>
@@ -172,14 +219,25 @@
       <!-- 空状态 -->
       <div v-if="filteredAndSortedRecommendations.length === 0" class="empty-state">
         <div class="text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            class="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
           <h3 class="mt-2 text-sm font-medium text-gray-900">暂无推荐数据</h3>
           <p class="mt-1 text-sm text-gray-500">没有找到符合条件的推荐记录。</p>
-          <button @click="refreshRecommendations"
-            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button
+            @click="refreshRecommendations"
+            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             刷新推荐
           </button>
         </div>
@@ -189,14 +247,18 @@
     <!-- 分页 -->
     <div v-if="showPagination" class="pagination">
       <slot name="pagination">
-        <div class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+        <div
+          class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6"
+        >
           <div class="flex justify-between flex-1 sm:hidden">
             <button
-              class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+              class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
               上一页
             </button>
             <button
-              class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+              class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
               下一页
             </button>
           </div>
@@ -308,7 +370,7 @@ const formatDate = (dateString: string) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 };
 

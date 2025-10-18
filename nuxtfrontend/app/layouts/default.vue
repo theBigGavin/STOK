@@ -49,20 +49,6 @@ const links = [
       },
     },
   ],
-  [
-    {
-      label: '系统帮助',
-      icon: 'i-lucide-help-circle',
-      to: 'https://github.com/nuxt-ui-templates/dashboard',
-      target: '_blank',
-    },
-    {
-      label: '反馈建议',
-      icon: 'i-lucide-message-square',
-      to: 'https://github.com/nuxt-ui-templates/dashboard',
-      target: '_blank',
-    },
-  ],
 ] satisfies NavigationMenuItem[][];
 
 const groups = computed(() => [
@@ -112,19 +98,6 @@ const groups = computed(() => [
       },
     ],
   },
-  {
-    id: 'code',
-    label: '开发资源',
-    items: [
-      {
-        id: 'source',
-        label: '查看页面源码',
-        icon: 'i-simple-icons-github',
-        to: `https://github.com/nuxt-ui-templates/dashboard/blob/main/app/pages${route.path === '/' ? '/index' : route.path}.vue`,
-        target: '_blank',
-      },
-    ],
-  },
 ]);
 
 onMounted(async () => {
@@ -166,10 +139,6 @@ onMounted(async () => {
       class="bg-elevated/25"
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
-      <template #header>
-        <!-- 团队菜单已移除 -->
-      </template>
-
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 

@@ -11,7 +11,7 @@ import { useCache, useCachedApi } from '../composables/cache';
 // 导入股票相关API服务
 import { stockApi, useCachedStockApi } from './stocks';
 import type { StockInfo, StockDailyData } from '../types/stocks';
-import type { StockQueryParams, DecisionQueryParams , BacktestQueryParams  } from '../types/query';
+import type { StockQueryParams, DecisionQueryParams, BacktestQueryParams } from '../types/query';
 
 // 导入决策相关API服务
 import { decisionApi, useCachedDecisionApi } from './decisions';

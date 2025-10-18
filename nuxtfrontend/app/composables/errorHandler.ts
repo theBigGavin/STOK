@@ -43,14 +43,18 @@ class ErrorHandler {
       typeof err === 'object' && err !== null && 'status' in err;
 
     // 网络错误
-    if ((hasName(error) && error.name === 'FetchError') ||
-      (hasMessage(error) && error.message?.includes('network'))) {
+    if (
+      (hasName(error) && error.name === 'FetchError') ||
+      (hasMessage(error) && error.message?.includes('network'))
+    ) {
       return ErrorType.NETWORK_ERROR;
     }
 
     // 超时错误
-    if ((hasName(error) && error.name === 'TimeoutError') ||
-      (hasMessage(error) && error.message?.includes('timeout'))) {
+    if (
+      (hasName(error) && error.name === 'TimeoutError') ||
+      (hasMessage(error) && error.message?.includes('timeout'))
+    ) {
       return ErrorType.TIMEOUT;
     }
 

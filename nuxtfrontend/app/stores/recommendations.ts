@@ -52,7 +52,7 @@ export const useRecommendationStore = defineStore('recommendations', () => {
       buyCount: 0,
       sellCount: 0,
       holdCount: 0,
-      avgConfidence: 0
+      avgConfidence: 0,
     },
     systemStats: {
       totalStocks: 0,
@@ -61,32 +61,32 @@ export const useRecommendationStore = defineStore('recommendations', () => {
       sellDecisions: 0,
       holdDecisions: 0,
       totalModels: 0,
-      activeModels: 0
-    }
+      activeModels: 0,
+    },
   });
 
   // 计算属性
   const computedState = {
     // 买入推荐
-    buyRecommendations: computed(() => 
+    buyRecommendations: computed(() =>
       state.recommendations.filter(r => r.decision.decision_type === 'buy')
     ),
-    
+
     // 卖出推荐
-    sellRecommendations: computed(() => 
+    sellRecommendations: computed(() =>
       state.recommendations.filter(r => r.decision.decision_type === 'sell')
     ),
-    
+
     // 观望推荐
-    holdRecommendations: computed(() => 
+    holdRecommendations: computed(() =>
       state.recommendations.filter(r => r.decision.decision_type === 'hold')
     ),
-    
+
     // 高置信度推荐（置信度 > 80%）
-    highConfidenceRecommendations: computed(() => 
+    highConfidenceRecommendations: computed(() =>
       state.recommendations.filter(r => r.decision.confidence > 0.8)
     ),
-    
+
     // 按股票代码分组的推荐
     recommendationsBySymbol: computed(() => {
       const grouped: Record<string, Recommendation[]> = {};
@@ -99,15 +99,15 @@ export const useRecommendationStore = defineStore('recommendations', () => {
       });
       return grouped;
     }),
-    
+
     // 是否有推荐数据
     hasRecommendations: computed(() => state.recommendations.length > 0),
-    
+
     // 是否正在加载
     isLoading: computed(() => state.loading),
-    
+
     // 是否正在刷新
-    isRefreshing: computed(() => state.refreshing)
+    isRefreshing: computed(() => state.refreshing),
   };
 
   // Actions
@@ -157,7 +157,7 @@ export const useRecommendationStore = defineStore('recommendations', () => {
       try {
         const response = await $fetch<any>('/api/decisions/recommendations', {
           method: 'GET',
-          params: { limit }
+          params: { limit },
         });
 
         if (response.status === 'success') {
@@ -182,7 +182,7 @@ export const useRecommendationStore = defineStore('recommendations', () => {
 
       try {
         const response = await $fetch<any>('/api/decisions/refresh', {
-          method: 'POST'
+          method: 'POST',
         });
 
         if (response.status === 'success') {
@@ -206,7 +206,7 @@ export const useRecommendationStore = defineStore('recommendations', () => {
     async fetchSystemStatistics() {
       try {
         const response = await $fetch<any>('/api/decisions/statistics', {
-          method: 'GET'
+          method: 'GET',
         });
 
         if (response.status === 'success') {
@@ -218,7 +218,7 @@ export const useRecommendationStore = defineStore('recommendations', () => {
             sellDecisions: stats.decision_statistics.sell_decisions,
             holdDecisions: stats.decision_statistics.hold_decisions,
             totalModels: stats.model_statistics.total_models,
-            activeModels: stats.model_statistics.active_models
+            activeModels: stats.model_statistics.active_models,
           };
         }
       } catch (err) {
@@ -233,14 +233,21 @@ export const useRecommendationStore = defineStore('recommendations', () => {
       const buyRecs = state.recommendations.filter(r => r.decision.decision_type === 'buy');
       const sellRecs = state.recommendations.filter(r => r.decision.decision_type === 'sell');
       const holdRecs = state.recommendations.filter(r => r.decision.decision_type === 'hold');
-      
+
       state.statistics = {
         buyCount: buyRecs.length,
         sellCount: sellRecs.length,
         holdCount: holdRecs.length,
-        avgConfidence: state.recommendations.length > 0 
-          ? Number((state.recommendations.reduce((sum, r) => sum + r.decision.confidence, 0) / state.recommendations.length * 100).toFixed(1))
-          : 0
+        avgConfidence:
+          state.recommendations.length > 0
+            ? Number(
+                (
+                  (state.recommendations.reduce((sum, r) => sum + r.decision.confidence, 0) /
+                    state.recommendations.length) *
+                  100
+                ).toFixed(1)
+              )
+            : 0,
       };
     },
 
@@ -253,12 +260,12 @@ export const useRecommendationStore = defineStore('recommendations', () => {
 
       try {
         const response = await $fetch<any>(`/api/decisions/recommendations/${symbol}`, {
-          method: 'GET'
+          method: 'GET',
         });
 
         if (response.status === 'success') {
           const recommendation = response.data;
-          
+
           // 更新或添加到推荐列表
           const index = state.recommendations.findIndex(r => r.stock.symbol === symbol);
           if (index !== -1) {
@@ -266,7 +273,7 @@ export const useRecommendationStore = defineStore('recommendations', () => {
           } else {
             state.recommendations.push(recommendation);
           }
-          
+
           actions.updateStatistics();
           return recommendation;
         } else {
@@ -288,16 +295,16 @@ export const useRecommendationStore = defineStore('recommendations', () => {
       try {
         // 这里可以调用交易API
         console.log('执行交易:', recommendation);
-        
+
         // 模拟交易执行
         return {
           success: true,
-          message: `已为 ${recommendation.stock.symbol} 执行交易操作`
+          message: `已为 ${recommendation.stock.symbol} 执行交易操作`,
         };
       } catch (err: any) {
         return {
           success: false,
-          message: err.message || '交易执行失败'
+          message: err.message || '交易执行失败',
         };
       }
     },
@@ -311,7 +318,7 @@ export const useRecommendationStore = defineStore('recommendations', () => {
         buyCount: 0,
         sellCount: 0,
         holdCount: 0,
-        avgConfidence: 0
+        avgConfidence: 0,
       };
     },
 
@@ -328,7 +335,7 @@ export const useRecommendationStore = defineStore('recommendations', () => {
         buyCount: 0,
         sellCount: 0,
         holdCount: 0,
-        avgConfidence: 0
+        avgConfidence: 0,
       };
       state.systemStats = {
         totalStocks: 0,
@@ -337,14 +344,14 @@ export const useRecommendationStore = defineStore('recommendations', () => {
         sellDecisions: 0,
         holdDecisions: 0,
         totalModels: 0,
-        activeModels: 0
+        activeModels: 0,
       };
-    }
+    },
   };
 
   return {
     ...toRefs(state),
     ...computedState,
-    ...actions
+    ...actions,
   };
 });

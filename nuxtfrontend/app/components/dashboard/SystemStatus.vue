@@ -316,5 +316,4 @@ watch(autoRefresh, newValue => {
     stopAutoRefresh();
   }
 });
-
 </script>

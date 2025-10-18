@@ -37,8 +37,7 @@
     "vue-tsc": "^3.1.1"
   },
   "resolutions": {
-    "unimport": "4.1.1",
-    "estree-walker": "^3.0.0"
+    "unimport": "4.1.1"
   },
   "packageManager": "pnpm@10.18.2"
 }

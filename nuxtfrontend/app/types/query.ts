@@ -13,7 +13,7 @@ export interface DecisionQueryParams {
   symbol?: string;
   startDate?: string;
   endDate?: string;
-  decisionType?: "BUY" | "SELL" | "HOLD";
+  decisionType?: 'BUY' | 'SELL' | 'HOLD';
   skip?: number;
   limit?: number;
 }

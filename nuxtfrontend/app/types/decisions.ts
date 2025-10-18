@@ -5,14 +5,14 @@
 export interface ModelDecision {
   modelId: number;
   modelName: string;
-  decision: "BUY" | "SELL" | "HOLD";
+  decision: 'BUY' | 'SELL' | 'HOLD';
   confidence: number;
   signalStrength: number;
   reasoning?: string;
 }
 
 export interface FinalDecision {
-  decision: "BUY" | "SELL" | "HOLD";
+  decision: 'BUY' | 'SELL' | 'HOLD';
   confidence: number;
   voteSummary: {
     BUY: number;
@@ -20,7 +20,7 @@ export interface FinalDecision {
     HOLD: number;
   };
   modelDetails: ModelDecision[];
-  riskLevel: "LOW" | "MEDIUM" | "HIGH";
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   reasoning: string;
 }
 

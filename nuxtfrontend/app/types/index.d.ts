@@ -4,19 +4,37 @@
  */
 
 // 导出股票相关类型
-export * from './stocks'
+export * from './stocks';
 
 // 导出决策相关类型
-export * from './decisions'
+export * from './decisions';
 
 // 导出模型相关类型
-export * from './models'
+export * from './models';
 
 // 导出回测相关类型
-export * from './backtest'
+export * from './backtest';
 
 // 导出API响应类型
-export * from './api'
+export * from './api';
 
 // 导出查询参数类型
-export * from './query'
+export * from './query';
+
+// 导出通用UI类型
+export interface Period {
+  label: string;
+  value: string;
+}
+
+export interface Range {
+  from: string;
+  to: string;
+}
+
+export interface Stat {
+  name: string;
+  value: string | number;
+  change?: string;
+  changeType?: 'positive' | 'negative';
+}

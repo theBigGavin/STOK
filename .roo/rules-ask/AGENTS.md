@@ -8,3 +8,5 @@
 - Real-time updates use Server-Sent Events (SSE) not WebSockets for stock price streaming
 - Database migrations use Alembic but custom scripts are in `data/migrations/` for data seeding
 - Testing requires separate PostgreSQL instance - in-memory databases won't work for all tests
+- API documentation is available at `/docs` but uses port 8099 in development, not standard 8000
+- Frontend development uses pnpm workspace with specific resolution for unimport compatibility

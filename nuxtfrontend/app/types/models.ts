@@ -6,8 +6,8 @@ export interface ModelInfo {
   modelId: number;
   name: string;
   description?: string;
-  modelType: "technical" | "ml" | "dl";
-  parameters: Record<string, any>;
+  modelType: 'technical' | 'ml' | 'dl';
+  parameters: Record<string, unknown>;
   weight: number;
   isActive: boolean;
   performanceMetrics?: {
@@ -18,20 +18,21 @@ export interface ModelInfo {
     totalReturn?: number;
     sharpeRatio?: number;
     maxDrawdown?: number;
+    winRate?: number;
   };
 }
 
 export interface PerformanceHistory {
-  date: string
-  modelId: number
-  modelName: string
+  date: string;
+  modelId: number;
+  modelName: string;
   metrics: {
-    accuracy?: number
-    precision?: number
-    recall?: number
-    f1Score?: number
-    totalReturn?: number
-    sharpeRatio?: number
-    maxDrawdown?: number
-  }
+    accuracy?: number;
+    precision?: number;
+    recall?: number;
+    f1Score?: number;
+    totalReturn?: number;
+    sharpeRatio?: number;
+    maxDrawdown?: number;
+  };
 }

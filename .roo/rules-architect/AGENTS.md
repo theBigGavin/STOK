@@ -8,3 +8,5 @@
 - Model weights are dynamic and can be adjusted based on historical performance
 - Data pipeline supports both batch processing (historical) and streaming (real-time) modes
 - Security model assumes trusted backend environment - frontend only displays decisions, doesn't execute trades
+- Database migrations use SQL files in `data/migrations/` - Alembic is configured but not used for migrations
+- Docker development environment uses port mapping: backend 8000→8099, PostgreSQL 5432, Redis 6380→6379

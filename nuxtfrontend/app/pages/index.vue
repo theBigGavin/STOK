@@ -18,13 +18,24 @@
 
           <!-- 刷新按钮 -->
           <UTooltip text="刷新数据" :shortcuts="['R']">
-            <UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" square :loading="loading"
-              @click="refreshDashboard" />
+            <UButton
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="ghost"
+              square
+              :loading="loading"
+              @click="refreshDashboard"
+            />
           </UTooltip>
 
           <!-- 通知按钮 -->
           <UTooltip text="通知" :shortcuts="['N']">
-            <UButton color="neutral" variant="ghost" square @click="isNotificationsSlideoverOpen = true">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              square
+              @click="isNotificationsSlideoverOpen = true"
+            >
               <UChip color="error" inset>
                 <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
               </UChip>
@@ -65,11 +76,15 @@
       </div>
 
       <!-- 错误提示 -->
-      <UAlert v-else-if="error" :title="error" color="error" variant="solid" icon="i-lucide-alert-triangle"
-        class="mb-6">
-        <template #description>
-          请检查网络连接或稍后重试
-        </template>
+      <UAlert
+        v-else-if="error"
+        :title="error"
+        color="error"
+        variant="solid"
+        icon="i-lucide-alert-triangle"
+        class="mb-6"
+      >
+        <template #description> 请检查网络连接或稍后重试 </template>
         <template #actions>
           <UButton color="neutral" variant="solid" label="重试" @click="refreshDashboard" />
         </template>
@@ -115,7 +130,12 @@
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold">系统状态详情</h3>
-          <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="showSystemStatus = false" />
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            @click="showSystemStatus = false"
+          />
         </div>
       </template>
 
@@ -128,9 +148,7 @@
             <div class="text-sm text-muted">运行时间</div>
           </div>
           <div class="text-center p-4 rounded-lg border border-default">
-            <div class="text-2xl font-semibold text-highlighted">
-              {{ memoryUsage }}%
-            </div>
+            <div class="text-2xl font-semibold text-highlighted">{{ memoryUsage }}%</div>
             <div class="text-sm text-muted">内存使用</div>
           </div>
         </div>
@@ -138,8 +156,11 @@
         <div class="space-y-2">
           <h4 class="font-medium">服务状态</h4>
           <div class="space-y-2">
-            <div v-for="service in serviceStatus" :key="service.name"
-              class="flex items-center justify-between p-2 rounded border border-default">
+            <div
+              v-for="service in serviceStatus"
+              :key="service.name"
+              class="flex items-center justify-between p-2 rounded border border-default"
+            >
               <span class="text-sm">{{ service.name }}</span>
               <UBadge :color="serviceStatusColor(service.status)" variant="subtle" size="xs">
                 {{ serviceStatusText(service.status) }}
@@ -153,19 +174,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useDashboardData } from '~/composables/useDashboardData'
-import { useDashboard } from '~/composables/useDashboard'
+import { ref, computed, onMounted, watch } from 'vue';
+import { useDashboardData } from '~/composables/useDashboardData';
+import { useDashboard } from '~/composables/useDashboard';
 
 // 组件导入
-import DashboardStats from '~/components/dashboard/DashboardStats.vue'
-import DecisionList from '~/components/dashboard/DecisionList.vue'
-import ModelPerformance from '~/components/dashboard/ModelPerformance.vue'
-import SystemStatus from '~/components/dashboard/SystemStatus.vue'
-import QuickActions from '~/components/dashboard/QuickActions.vue'
+import DashboardStats from '~/components/dashboard/DashboardStats.vue';
+import DecisionList from '~/components/dashboard/DecisionList.vue';
+import ModelPerformance from '~/components/dashboard/ModelPerformance.vue';
+import SystemStatus from '~/components/dashboard/SystemStatus.vue';
+import QuickActions from '~/components/dashboard/QuickActions.vue';
 
 // 组合式函数
-const { isNotificationsSlideoverOpen } = useDashboard()
+const { isNotificationsSlideoverOpen } = useDashboard();
 const {
   loading,
   error,
@@ -177,119 +198,128 @@ const {
   stopAutoRefresh,
   loadDashboardData,
   refreshDashboard,
-  clearError
-} = useDashboardData()
+} = useDashboardData();
 
 // 状态
-const showSystemStatus = ref(false)
+const showSystemStatus = ref(false);
 
 // 快速操作菜单项
-const quickActionItems = [[
-  {
-    label: '生成决策',
-    icon: 'i-lucide-play',
-    click: () => console.log('生成决策')
-  },
-  {
-    label: '批量决策',
-    icon: 'i-lucide-layers',
-    click: () => console.log('批量决策')
-  },
-  {
-    label: '刷新数据',
-    icon: 'i-lucide-refresh-cw',
-    click: () => refreshDashboard()
-  }
-]]
+const quickActionItems = [
+  [
+    {
+      label: '生成决策',
+      icon: 'i-lucide-play',
+      click: () => console.log('生成决策'),
+    },
+    {
+      label: '批量决策',
+      icon: 'i-lucide-layers',
+      click: () => console.log('批量决策'),
+    },
+    {
+      label: '刷新数据',
+      icon: 'i-lucide-refresh-cw',
+      click: () => refreshDashboard(),
+    },
+  ],
+];
 
 // 计算属性
 const systemUptime = computed(() => {
-  const uptime = systemHealth.value?.system.uptime || 0
-  if (uptime < 3600) return `${Math.floor(uptime / 60)}分钟`
-  if (uptime < 86400) return `${Math.floor(uptime / 3600)}小时`
-  return `${Math.floor(uptime / 86400)}天`
-})
+  const uptime = systemHealth.value?.system.uptime || 0;
+  if (uptime < 3600) return `${Math.floor(uptime / 60)}分钟`;
+  if (uptime < 86400) return `${Math.floor(uptime / 3600)}小时`;
+  return `${Math.floor(uptime / 86400)}天`;
+});
 
 const memoryUsage = computed(() => {
-  return systemHealth.value?.system.memoryUsage || 0
-})
+  return systemHealth.value?.system.memoryUsage || 0;
+});
 
 const serviceStatus = computed(() => [
   {
     name: 'API服务',
-    status: systemHealth.value?.services.api?.status || 'healthy'
+    status: systemHealth.value?.services.api?.status || 'healthy',
   },
   {
     name: '数据库',
-    status: systemHealth.value?.services.database?.status || 'healthy'
+    status: systemHealth.value?.services.database?.status || 'healthy',
   },
   {
     name: 'Redis缓存',
-    status: systemHealth.value?.services.redis?.status || 'healthy'
+    status: systemHealth.value?.services.redis?.status || 'healthy',
   },
   {
     name: '模型服务',
-    status: systemHealth.value?.services.models?.status || 'healthy'
-  }
-])
+    status: systemHealth.value?.services.models?.status || 'healthy',
+  },
+]);
 
 // 方法
 const formatTime = (timestamp: string) => {
-  const date = new Date(timestamp)
+  const date = new Date(timestamp);
   return date.toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
-  })
-}
+    second: '2-digit',
+  });
+};
 
 const serviceStatusColor = (status: string) => {
   switch (status) {
-    case 'healthy': return 'success'
-    case 'degraded': return 'warning'
-    case 'unhealthy': return 'error'
-    default: return 'neutral'
+    case 'healthy':
+      return 'success';
+    case 'degraded':
+      return 'warning';
+    case 'unhealthy':
+      return 'error';
+    default:
+      return 'neutral';
   }
-}
+};
 
 const serviceStatusText = (status: string) => {
   switch (status) {
-    case 'healthy': return '正常'
-    case 'degraded': return '降级'
-    case 'unhealthy': return '异常'
-    default: return '未知'
+    case 'healthy':
+      return '正常';
+    case 'degraded':
+      return '降级';
+    case 'unhealthy':
+      return '异常';
+    default:
+      return '未知';
   }
-}
+};
 
 // 自动刷新逻辑
-watch(autoRefresh, (newValue) => {
+watch(autoRefresh, newValue => {
   if (newValue) {
-    startAutoRefresh()
+    startAutoRefresh();
   } else {
-    stopAutoRefresh()
+    stopAutoRefresh();
   }
-})
+});
 
 // 生命周期
 onMounted(async () => {
   // 初始化加载数据
-  await loadDashboardData()
-})
+  await loadDashboardData();
+});
 
 // 错误处理
-watch(error, (newError) => {
+watch(error, newError => {
   if (newError) {
     // 可以在这里添加错误上报逻辑
-    console.error('仪表盘错误:', newError)
+    console.error('仪表盘错误:', newError);
   }
-})
+});
 
 // 键盘快捷键
 defineShortcuts({
-  'r': () => refreshDashboard(),
-  's': () => showSystemStatus.value = !showSystemStatus.value,
-  'n': () => isNotificationsSlideoverOpen.value = !isNotificationsSlideoverOpen.value
-})
+  r: () => refreshDashboard(),
+  s: () => (showSystemStatus.value = !showSystemStatus.value),
+  n: () => (isNotificationsSlideoverOpen.value = !isNotificationsSlideoverOpen.value),
+});
 </script>
 
 <style scoped>
@@ -312,7 +342,6 @@ defineShortcuts({
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;

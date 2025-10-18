@@ -3,48 +3,56 @@
  * 管理应用级别的全局状态，包括用户偏好、主题设置、通知等
  */
 
-import { defineStore } from 'pinia'
-import type { StockInfo } from '~/types/stocks'
-import type { DecisionResult } from '~/types/decisions'
-import type { ModelInfo } from '~/types/models'
-import type { BacktestResult } from '~/types/backtest'
+import { defineStore } from 'pinia';
+import type { StockInfo } from '~/types/stocks';
 
 // Nuxt运行时配置
-const isClient = typeof window !== 'undefined'
+const isClient = typeof window !== 'undefined';
 
 // 应用主题类型
-type AppTheme = 'light' | 'dark' | 'auto'
+type AppTheme = 'light' | 'dark' | 'auto';
 
 // 应用配置接口
 interface AppConfig {
-  theme: AppTheme
-  language: string
-  notifications: boolean
-  autoRefresh: boolean
-  refreshInterval: number
-  chartTheme: string
+  theme: AppTheme;
+  language: string;
+  notifications: boolean;
+  autoRefresh: boolean;
+  refreshInterval: number;
+  chartTheme: string;
+}
+
+// 通知接口
+interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  important: boolean;
+  read: boolean;
+  timestamp: Date;
 }
 
 // 应用状态接口
 interface AppState {
   // 全局加载状态
-  loading: boolean
+  loading: boolean;
   // 全局错误信息
-  error: string | null
+  error: string | null;
   // 应用配置
-  config: AppConfig
+  config: AppConfig;
   // 选中的股票
-  selectedStock: StockInfo | null
+  selectedStock: StockInfo | null;
   // 最近访问的股票
-  recentStocks: StockInfo[]
+  recentStocks: StockInfo[];
   // 应用通知
-  notifications: any[]
+  notifications: AppNotification[];
   // 未读通知数量
-  unreadNotifications: number
+  unreadNotifications: number;
   // 侧边栏状态
-  sidebarCollapsed: boolean
+  sidebarCollapsed: boolean;
   // 移动端菜单状态
-  mobileMenuOpen: boolean
+  mobileMenuOpen: boolean;
 }
 
 /**
@@ -61,15 +69,15 @@ export const useAppStore = defineStore('app', () => {
       notifications: true,
       autoRefresh: false,
       refreshInterval: 30000, // 30秒
-      chartTheme: 'default'
+      chartTheme: 'default',
     },
     selectedStock: null,
     recentStocks: [],
     notifications: [],
     unreadNotifications: 0,
     sidebarCollapsed: false,
-    mobileMenuOpen: false
-  })
+    mobileMenuOpen: false,
+  });
 
   // 计算属性
   const computedState = {
@@ -77,32 +85,30 @@ export const useAppStore = defineStore('app', () => {
     currentTheme: computed(() => {
       if (state.config.theme === 'auto') {
         // 根据系统偏好自动选择
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
-      return state.config.theme
+      return state.config.theme;
     }),
 
     // 是否在移动设备上
     isMobile: computed(() => {
       if (isClient) {
-        return window.innerWidth < 768
+        return window.innerWidth < 768;
       }
-      return false
+      return false;
     }),
 
     // 最近访问的活跃股票
-    recentActiveStocks: computed(() => 
-      state.recentStocks.filter(stock => stock.isActive)
-    ),
+    recentActiveStocks: computed(() => state.recentStocks.filter(stock => stock.isActive)),
 
     // 是否有未读通知
     hasUnreadNotifications: computed(() => state.unreadNotifications > 0),
 
     // 重要通知
-    importantNotifications: computed(() => 
+    importantNotifications: computed(() =>
       state.notifications.filter(notification => notification.important)
-    )
-  }
+    ),
+  };
 
   // Actions
   const actions = {
@@ -110,31 +116,31 @@ export const useAppStore = defineStore('app', () => {
      * 设置加载状态
      */
     setLoading(loading: boolean) {
-      state.loading = loading
+      state.loading = loading;
     },
 
     /**
      * 设置错误信息
      */
     setError(error: string | null) {
-      state.error = error
+      state.error = error;
     },
 
     /**
      * 清除错误信息
      */
     clearError() {
-      state.error = null
+      state.error = null;
     },
 
     /**
      * 更新应用配置
      */
     updateConfig(config: Partial<AppConfig>) {
-      state.config = { ...state.config, ...config }
+      state.config = { ...state.config, ...config };
       // 保存到本地存储
       if (isClient) {
-        localStorage.setItem('app-config', JSON.stringify(state.config))
+        localStorage.setItem('app-config', JSON.stringify(state.config));
       }
     },
 
@@ -143,12 +149,12 @@ export const useAppStore = defineStore('app', () => {
      */
     loadConfig() {
       if (isClient) {
-        const savedConfig = localStorage.getItem('app-config')
+        const savedConfig = localStorage.getItem('app-config');
         if (savedConfig) {
           try {
-            state.config = { ...state.config, ...JSON.parse(savedConfig) }
+            state.config = { ...state.config, ...JSON.parse(savedConfig) };
           } catch (error) {
-            console.error('加载应用配置失败:', error)
+            console.error('加载应用配置失败:', error);
           }
         }
       }
@@ -158,10 +164,10 @@ export const useAppStore = defineStore('app', () => {
      * 选择股票
      */
     selectStock(stock: StockInfo | null) {
-      state.selectedStock = stock
+      state.selectedStock = stock;
       if (stock) {
         // 添加到最近访问列表
-        this.addToRecentStocks(stock)
+        this.addToRecentStocks(stock);
       }
     },
 
@@ -170,16 +176,16 @@ export const useAppStore = defineStore('app', () => {
      */
     addToRecentStocks(stock: StockInfo) {
       // 移除重复项
-      state.recentStocks = state.recentStocks.filter(s => s.id !== stock.id)
+      state.recentStocks = state.recentStocks.filter(s => s.id !== stock.id);
       // 添加到开头
-      state.recentStocks.unshift(stock)
+      state.recentStocks.unshift(stock);
       // 限制数量
       if (state.recentStocks.length > 10) {
-        state.recentStocks = state.recentStocks.slice(0, 10)
+        state.recentStocks = state.recentStocks.slice(0, 10);
       }
       // 保存到本地存储
       if (isClient) {
-        localStorage.setItem('recent-stocks', JSON.stringify(state.recentStocks))
+        localStorage.setItem('recent-stocks', JSON.stringify(state.recentStocks));
       }
     },
 
@@ -188,12 +194,12 @@ export const useAppStore = defineStore('app', () => {
      */
     loadRecentStocks() {
       if (isClient) {
-        const savedStocks = localStorage.getItem('recent-stocks')
+        const savedStocks = localStorage.getItem('recent-stocks');
         if (savedStocks) {
           try {
-            state.recentStocks = JSON.parse(savedStocks)
+            state.recentStocks = JSON.parse(savedStocks);
           } catch (error) {
-            console.error('加载最近访问股票失败:', error)
+            console.error('加载最近访问股票失败:', error);
           }
         }
       }
@@ -202,14 +208,14 @@ export const useAppStore = defineStore('app', () => {
     /**
      * 添加通知
      */
-    addNotification(notification: any) {
-      state.notifications.unshift(notification)
+    addNotification(notification: AppNotification) {
+      state.notifications.unshift(notification);
       if (!notification.read) {
-        state.unreadNotifications++
+        state.unreadNotifications++;
       }
       // 限制通知数量
       if (state.notifications.length > 50) {
-        state.notifications = state.notifications.slice(0, 50)
+        state.notifications = state.notifications.slice(0, 50);
       }
     },
 
@@ -217,10 +223,10 @@ export const useAppStore = defineStore('app', () => {
      * 标记通知为已读
      */
     markNotificationAsRead(id: string) {
-      const notification = state.notifications.find(n => n.id === id)
+      const notification = state.notifications.find(n => n.id === id);
       if (notification && !notification.read) {
-        notification.read = true
-        state.unreadNotifications = Math.max(0, state.unreadNotifications - 1)
+        notification.read = true;
+        state.unreadNotifications = Math.max(0, state.unreadNotifications - 1);
       }
     },
 
@@ -229,61 +235,61 @@ export const useAppStore = defineStore('app', () => {
      */
     markAllNotificationsAsRead() {
       state.notifications.forEach(notification => {
-        notification.read = true
-      })
-      state.unreadNotifications = 0
+        notification.read = true;
+      });
+      state.unreadNotifications = 0;
     },
 
     /**
      * 清除所有通知
      */
     clearNotifications() {
-      state.notifications = []
-      state.unreadNotifications = 0
+      state.notifications = [];
+      state.unreadNotifications = 0;
     },
 
     /**
      * 切换侧边栏状态
      */
     toggleSidebar() {
-      state.sidebarCollapsed = !state.sidebarCollapsed
+      state.sidebarCollapsed = !state.sidebarCollapsed;
     },
 
     /**
      * 切换移动端菜单状态
      */
     toggleMobileMenu() {
-      state.mobileMenuOpen = !state.mobileMenuOpen
+      state.mobileMenuOpen = !state.mobileMenuOpen;
     },
 
     /**
      * 关闭移动端菜单
      */
     closeMobileMenu() {
-      state.mobileMenuOpen = false
+      state.mobileMenuOpen = false;
     },
 
     /**
      * 重置应用状态
      */
     reset() {
-      state.loading = false
-      state.error = null
-      state.selectedStock = null
-      state.notifications = []
-      state.unreadNotifications = 0
-      state.sidebarCollapsed = false
-      state.mobileMenuOpen = false
+      state.loading = false;
+      state.error = null;
+      state.selectedStock = null;
+      state.notifications = [];
+      state.unreadNotifications = 0;
+      state.sidebarCollapsed = false;
+      state.mobileMenuOpen = false;
     },
 
     /**
      * 初始化应用状态
      */
     initialize() {
-      this.loadConfig()
-      this.loadRecentStocks()
-    }
-  }
+      this.loadConfig();
+      this.loadRecentStocks();
+    },
+  };
 
   // 返回Store内容
   return {
@@ -292,9 +298,9 @@ export const useAppStore = defineStore('app', () => {
     // 计算属性
     ...computedState,
     // Actions
-    ...actions
-  }
-})
+    ...actions,
+  };
+});
 
 // 导出Store类型
-export type AppStore = ReturnType<typeof useAppStore>
+export type AppStore = ReturnType<typeof useAppStore>;

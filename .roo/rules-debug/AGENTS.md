@@ -8,3 +8,5 @@
 - Decision engine uses weighted voting - individual model failures may not affect final decision
 - Real-time data updates use WebSocket connections - network issues cause silent failures
 - Backtest models require historical data - missing data causes runtime errors without warnings
+- API testing uses port 8099 (mapped from container port 8000) - not the standard FastAPI port
+- Database migrations run automatically in Docker but require manual SQL file updates

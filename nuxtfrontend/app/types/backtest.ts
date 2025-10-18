@@ -21,7 +21,7 @@ export interface BacktestResult {
 }
 
 export interface Trade {
-  type: "BUY" | "SELL";
+  type: 'BUY' | 'SELL';
   date: string;
   price: number;
   shares: number;
@@ -38,7 +38,7 @@ export interface EquityPoint {
 
 export interface Signal {
   date: string;
-  signal: "BUY" | "SELL" | "HOLD";
+  signal: 'BUY' | 'SELL' | 'HOLD';
   price: number;
   model: string;
   confidence: number;
@@ -46,17 +46,17 @@ export interface Signal {
 
 // 回测请求类型
 export interface BacktestRequest {
-  symbol: string
-  startDate: string
-  endDate: string
-  initialCapital: number
-  modelIds?: number[]
-  strategy?: string
-  parameters?: Record<string, any>
+  symbol: string;
+  startDate: string;
+  endDate: string;
+  initialCapital: number;
+  modelIds?: number[];
+  strategy?: string;
+  parameters?: Record<string, unknown>;
 }
 
 export interface EquityCurve {
-  name: string
-  data: EquityPoint[]
-  color: string
+  name: string;
+  data: EquityPoint[];
+  color: string;
 }

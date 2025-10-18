@@ -9,7 +9,6 @@ import type { DecisionQueryParams } from '~/types/query';
 import { decisionApi, useCachedDecisionApi } from '~/api/decisions';
 import { useErrorHandler } from '~/composables/errorHandler';
 
-
 // 决策状态接口
 interface DecisionState {
   // 决策列表

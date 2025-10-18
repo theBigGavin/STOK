@@ -219,6 +219,4 @@ const formatTime = (timestamp: string) => {
   if (diffMins < 1440) return `${Math.floor(diffMins / 60)}小时前`;
   return date.toLocaleDateString('zh-CN');
 };
-
-
 </script>

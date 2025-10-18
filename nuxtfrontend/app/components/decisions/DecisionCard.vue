@@ -209,7 +209,10 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'view-details' | 'execute-trade' | 'backtest-decision' | 'retry', decision: DecisionResult): void;
+  (
+    e: 'view-details' | 'execute-trade' | 'backtest-decision' | 'retry',
+    decision: DecisionResult
+  ): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {

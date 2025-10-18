@@ -3,7 +3,6 @@
  * 提供系统状态监控、服务健康检查、性能指标等功能
  */
 
-
 // 健康检查响应类型
 export interface HealthCheckResponse {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -139,12 +138,9 @@ export const healthApi = {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
-      const response = await request(
-        '/health/database',
-        {
-          method: 'GET',
-        }
-      );
+      const response = await request('/health/database', {
+        method: 'GET',
+      });
 
       if (!response.data) {
         throw new Error('API响应数据为空');
@@ -163,12 +159,9 @@ export const healthApi = {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
-      const response = await request(
-        '/health/redis',
-        {
-          method: 'GET',
-        }
-      );
+      const response = await request('/health/redis', {
+        method: 'GET',
+      });
 
       if (!response.data) {
         throw new Error('API响应数据为空');
@@ -263,12 +256,9 @@ export const healthApi = {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
-      const response = await request(
-        '/health/cache/clear',
-        {
-          method: 'POST',
-        }
-      );
+      const response = await request('/health/cache/clear', {
+        method: 'POST',
+      });
 
       if (!response.data) {
         throw new Error('API响应数据为空');
@@ -287,12 +277,9 @@ export const healthApi = {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
-      const response = await request(
-        `/health/restart/${service}`,
-        {
-          method: 'POST',
-        }
-      );
+      const response = await request(`/health/restart/${service}`, {
+        method: 'POST',
+      });
 
       if (!response.data) {
         throw new Error('API响应数据为空');

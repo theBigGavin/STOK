@@ -342,9 +342,7 @@ const errors = reactive<Record<string, string>>({});
 
 // 表单验证
 const isFormValid = computed(() => {
-  return (
-    config.name.trim() !== '' && config.weight >= 0 && config.weight <= 1
-  );
+  return config.name.trim() !== '' && config.weight >= 0 && config.weight <= 1;
 });
 
 // 重置配置

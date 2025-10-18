@@ -115,7 +115,6 @@ const voteData = computed<VoteData[]>(() => {
   }));
 });
 
-
 // 柱状图数据
 const barChartData = computed(() => voteData.value);
 const barX = (d: VoteData) => d.decision;

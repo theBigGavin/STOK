@@ -258,6 +258,4 @@ const formatTime = (timestamp: string) => {
     })
   );
 };
-
-
 </script>

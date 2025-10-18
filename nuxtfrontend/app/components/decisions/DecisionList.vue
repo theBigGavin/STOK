@@ -3,31 +3,32 @@
     <!-- 列表头部 -->
     <div class="list-header">
       <slot name="header">
-        <h3 class="text-lg font-semibold text-gray-900">决策列表</h3>
+        <h3 class="text-lg font-semibold text-gray-900">AI选股推荐</h3>
       </slot>
 
       <!-- 筛选和排序控制 -->
       <div class="controls">
         <slot name="controls">
           <div class="flex items-center space-x-4">
-            <select
-              v-model="filterDecision"
-              class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">全部决策</option>
-              <option value="BUY">买入</option>
-              <option value="SELL">卖出</option>
-              <option value="HOLD">持有</option>
+            <select v-model="filterDecision"
+              class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="">全部推荐</option>
+              <option value="buy">买入推荐</option>
+              <option value="sell">卖出推荐</option>
+              <option value="hold">观望推荐</option>
             </select>
 
-            <select
-              v-model="sortBy"
-              class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+            <select v-model="sortBy"
+              class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="confidence">置信度</option>
-              <option value="timestamp">时间</option>
+              <option value="votes">投票数</option>
               <option value="symbol">股票代码</option>
             </select>
+
+            <button @click="refreshRecommendations" :disabled="refreshing"
+              class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+              {{ refreshing ? '刷新中...' : '刷新推荐' }}
+            </button>
           </div>
         </slot>
       </div>
@@ -49,11 +50,9 @@
         <div class="flex">
           <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fill-rule="evenodd"
+              <path fill-rule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clip-rule="evenodd"
-              />
+                clip-rule="evenodd" />
             </svg>
           </div>
           <div class="ml-3">
@@ -64,34 +63,38 @@
       </div>
     </div>
 
-    <!-- 决策列表 -->
+    <!-- 推荐列表 -->
     <div v-else class="list-container">
       <ul class="divide-y divide-gray-200">
-        <li
-          v-for="decision in filteredAndSortedDecisions"
-          :key="`${decision.symbol}-${decision.tradeDate}`"
-          class="decision-item hover:bg-gray-50 transition-colors duration-150"
-        >
+        <li v-for="recommendation in filteredAndSortedRecommendations" :key="recommendation.stock.id"
+          class="recommendation-item hover:bg-gray-50 transition-colors duration-150">
           <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <!-- 股票信息 -->
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <div
-                    class="decision-badge"
-                    :class="decisionBadgeClass(decision.finalDecision.decision)"
-                  >
-                    {{ decisionLabel(decision.finalDecision.decision) }}
+                  <div class="decision-badge" :class="decisionBadgeClass(recommendation.decision.decision_type)">
+                    {{ decisionLabel(recommendation.decision.decision_type) }}
                   </div>
                 </div>
                 <div class="ml-4">
                   <div class="flex items-center">
-                    <p class="text-sm font-medium text-gray-900">{{ decision.symbol }}</p>
-                    <span class="ml-2 text-xs text-gray-500">{{ decision.tradeDate }}</span>
+                    <p class="text-sm font-medium text-gray-900">{{ recommendation.stock.symbol }}</p>
+                    <span class="ml-2 text-xs text-gray-500">{{ recommendation.stock.name }}</span>
                   </div>
-                  <p class="text-sm text-gray-500">
-                    置信度: {{ (decision.finalDecision.confidence * 100).toFixed(1) }}%
-                  </p>
+                  <div class="flex items-center space-x-4 mt-1">
+                    <p class="text-sm text-gray-500">
+                      置信度: {{ (recommendation.decision.confidence * 100).toFixed(1) }}%
+                    </p>
+                    <p v-if="recommendation.stock.current_price" class="text-sm text-gray-500">
+                      当前价: ¥{{ recommendation.stock.current_price.toFixed(2) }}
+                    </p>
+                    <p v-if="recommendation.stock.price_change_percent" class="text-sm"
+                      :class="recommendation.stock.price_change_percent >= 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ recommendation.stock.price_change_percent >= 0 ? '+' : '' }}{{
+                        recommendation.stock.price_change_percent.toFixed(2) }}%
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -99,43 +102,34 @@
               <div class="flex items-center space-x-4">
                 <div class="vote-summary">
                   <div class="flex items-center space-x-2 text-xs">
-                    <span class="text-green-600"
-                      >买: {{ decision.finalDecision.voteSummary.BUY }}</span
-                    >
-                    <span class="text-red-600"
-                      >卖: {{ decision.finalDecision.voteSummary.SELL }}</span
-                    >
-                    <span class="text-gray-600"
-                      >持: {{ decision.finalDecision.voteSummary.HOLD }}</span
-                    >
+                    <span class="text-green-600">买: {{ recommendation.vote_summary.buy_votes }}</span>
+                    <span class="text-red-600">卖: {{ recommendation.vote_summary.sell_votes }}</span>
+                    <span class="text-gray-600">持: {{ recommendation.vote_summary.hold_votes }}</span>
+                  </div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    总投票: {{ recommendation.vote_summary.total_votes }}
                   </div>
                 </div>
 
-                <!-- 风险指示器 -->
-                <div class="risk-indicator">
-                  <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    :class="riskBadgeClass(decision.finalDecision.riskLevel)"
-                  >
-                    {{ riskLabel(decision.finalDecision.riskLevel) }}
-                  </span>
+                <!-- 目标价格 -->
+                <div v-if="recommendation.decision.target_price" class="target-price">
+                  <div class="text-xs text-gray-500">目标价</div>
+                  <div class="text-sm font-medium text-green-600">
+                    ¥{{ recommendation.decision.target_price.toFixed(2) }}
+                  </div>
                 </div>
 
                 <!-- 操作按钮 -->
                 <div class="action-buttons">
-                  <slot name="actions" :decision="decision">
-                    <button
-                      class="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                      @click="$emit('decision-detail', decision)"
-                    >
+                  <slot name="actions" :recommendation="recommendation">
+                    <button class="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                      @click="$emit('recommendation-detail', recommendation)">
                       详情
                     </button>
-                    <button
-                      v-if="decision.riskAssessment.isApproved"
+                    <button v-if="recommendation.decision.decision_type === 'buy'"
                       class="ml-3 text-green-600 hover:text-green-900 text-sm font-medium"
-                      @click="$emit('execute-trade', decision)"
-                    >
-                      执行交易
+                      @click="$emit('execute-trade', recommendation)">
+                      执行买入
                     </button>
                   </slot>
                 </div>
@@ -143,16 +137,13 @@
             </div>
 
             <!-- 详细投票信息 -->
-            <div class="mt-2">
+            <div class="mt-3">
               <div class="model-votes">
                 <div class="flex flex-wrap gap-2">
-                  <span
-                    v-for="model in decision.finalDecision.modelDetails"
-                    :key="model.modelId"
-                    class="inline-flex items-center px-2 py-1 rounded text-xs"
-                    :class="modelVoteClass(model.decision)"
-                  >
-                    {{ model.modelName }}: {{ model.decision }}
+                  <span v-for="vote in recommendation.vote_details" :key="vote.model_id"
+                    class="inline-flex items-center px-2 py-1 rounded text-xs" :class="modelVoteClass(vote.vote_type)">
+                    {{ vote.vote_type === 'buy' ? '买入' : vote.vote_type === 'sell' ? '卖出' : '观望' }}
+                    ({{ (vote.confidence * 100).toFixed(0) }}%)
                   </span>
                 </div>
               </div>
@@ -160,8 +151,18 @@
               <!-- 推理说明 -->
               <div v-if="showReasoning" class="reasoning mt-2">
                 <p class="text-xs text-gray-600">
-                  {{ decision.finalDecision.reasoning }}
+                  {{ recommendation.decision.reasoning }}
                 </p>
+              </div>
+
+              <!-- 时间信息 -->
+              <div class="time-info mt-2">
+                <span class="text-xs text-gray-500">
+                  生成时间: {{ formatDate(recommendation.decision.generated_at) }}
+                </span>
+                <span v-if="recommendation.decision.time_horizon" class="text-xs text-gray-500 ml-4">
+                  时间周期: {{ recommendation.decision.time_horizon }}天
+                </span>
               </div>
             </div>
           </div>
@@ -169,23 +170,18 @@
       </ul>
 
       <!-- 空状态 -->
-      <div v-if="filteredAndSortedDecisions.length === 0" class="empty-state">
+      <div v-if="filteredAndSortedRecommendations.length === 0" class="empty-state">
         <div class="text-center py-12">
-          <svg
-            class="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">暂无决策数据</h3>
-          <p class="mt-1 text-sm text-gray-500">没有找到符合条件的决策记录。</p>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">暂无推荐数据</h3>
+          <p class="mt-1 text-sm text-gray-500">没有找到符合条件的推荐记录。</p>
+          <button @click="refreshRecommendations"
+            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            刷新推荐
+          </button>
         </div>
       </div>
     </div>
@@ -193,18 +189,14 @@
     <!-- 分页 -->
     <div v-if="showPagination" class="pagination">
       <slot name="pagination">
-        <div
-          class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6"
-        >
+        <div class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
           <div class="flex justify-between flex-1 sm:hidden">
             <button
-              class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
+              class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
               上一页
             </button>
             <button
-              class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
+              class="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
               下一页
             </button>
           </div>
@@ -215,30 +207,33 @@
 </template>
 
 <script setup lang="ts">
-import type { DecisionResult } from '~/types/decisions';
+import type { Recommendation } from '~/types/decisions';
 
 interface Props {
-  decisions: DecisionResult[];
+  recommendations: Recommendation[];
   loading?: boolean;
   error?: string;
   filterDecision?: string;
   sortBy?: string;
   showPagination?: boolean;
   showReasoning?: boolean;
+  refreshing?: boolean;
 }
 
 interface Emits {
   (e: 'filter-change' | 'sort-change', value: string): void;
-  (e: 'decision-detail' | 'execute-trade', decision: DecisionResult): void;
+  (e: 'recommendation-detail' | 'execute-trade', recommendation: Recommendation): void;
+  (e: 'refresh-recommendations'): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   error: '',
   filterDecision: '',
-  sortBy: 'timestamp',
+  sortBy: 'confidence',
   showPagination: false,
   showReasoning: false,
+  refreshing: false,
 });
 
 const emit = defineEmits<Emits>();
@@ -247,49 +242,49 @@ const emit = defineEmits<Emits>();
 const filterDecision = ref(props.filterDecision);
 const sortBy = ref(props.sortBy);
 
-// 筛选和排序后的决策数据
-const filteredAndSortedDecisions = computed(() => {
-  let decisions = [...props.decisions];
+// 筛选和排序后的推荐数据
+const filteredAndSortedRecommendations = computed(() => {
+  let recommendations = [...props.recommendations];
 
   // 应用筛选
   if (filterDecision.value) {
-    decisions = decisions.filter(
-      decision => decision.finalDecision.decision === filterDecision.value
+    recommendations = recommendations.filter(
+      rec => rec.decision.decision_type === filterDecision.value
     );
   }
 
   // 应用排序
-  decisions.sort((a, b) => {
+  recommendations.sort((a, b) => {
     switch (sortBy.value) {
       case 'confidence':
-        return b.finalDecision.confidence - a.finalDecision.confidence;
-      case 'timestamp':
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        return b.decision.confidence - a.decision.confidence;
+      case 'votes':
+        return b.vote_summary.total_votes - a.vote_summary.total_votes;
       case 'symbol':
-        return a.symbol.localeCompare(b.symbol);
+        return a.stock.symbol.localeCompare(b.stock.symbol);
       default:
         return 0;
     }
   });
 
-  return decisions;
+  return recommendations;
 });
 
 // 决策标签和样式
 const decisionLabel = (decision: string) => {
   const labelMap: Record<string, string> = {
-    BUY: '买入',
-    SELL: '卖出',
-    HOLD: '持有',
+    buy: '买入',
+    sell: '卖出',
+    hold: '观望',
   };
   return labelMap[decision] || decision;
 };
 
 const decisionBadgeClass = (decision: string) => {
   const classMap: Record<string, string> = {
-    BUY: 'bg-green-100 text-green-800',
-    SELL: 'bg-red-100 text-red-800',
-    HOLD: 'bg-gray-100 text-gray-800',
+    buy: 'bg-green-100 text-green-800',
+    sell: 'bg-red-100 text-red-800',
+    hold: 'bg-gray-100 text-gray-800',
   };
   return classMap[decision] || 'bg-gray-100 text-gray-800';
 };
@@ -297,30 +292,29 @@ const decisionBadgeClass = (decision: string) => {
 // 模型投票样式
 const modelVoteClass = (decision: string) => {
   const classMap: Record<string, string> = {
-    BUY: 'bg-green-50 text-green-700 border border-green-200',
-    SELL: 'bg-red-50 text-red-700 border border-red-200',
-    HOLD: 'bg-gray-50 text-gray-700 border border-gray-200',
+    buy: 'bg-green-50 text-green-700 border border-green-200',
+    sell: 'bg-red-50 text-red-700 border border-red-200',
+    hold: 'bg-gray-50 text-gray-700 border border-gray-200',
   };
   return classMap[decision] || 'bg-gray-50 text-gray-700 border border-gray-200';
 };
 
-// 风险标签和样式
-const riskLabel = (riskLevel: string) => {
-  const labelMap: Record<string, string> = {
-    LOW: '低风险',
-    MEDIUM: '中风险',
-    HIGH: '高风险',
-  };
-  return labelMap[riskLevel] || riskLevel;
+// 格式化日期
+const formatDate = (dateString: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
-const riskBadgeClass = (riskLevel: string) => {
-  const classMap: Record<string, string> = {
-    LOW: 'bg-green-100 text-green-800',
-    MEDIUM: 'bg-yellow-100 text-yellow-800',
-    HIGH: 'bg-red-100 text-red-800',
-  };
-  return classMap[riskLevel] || 'bg-gray-100 text-gray-800';
+// 刷新推荐
+const refreshRecommendations = () => {
+  emit('refresh-recommendations');
 };
 
 // 监听筛选和排序变化
@@ -373,7 +367,7 @@ watch(
   @apply divide-y divide-gray-200;
 }
 
-.decision-item {
+.recommendation-item {
   @apply transition-colors duration-150;
 }
 
@@ -397,6 +391,10 @@ watch(
   @apply text-xs text-gray-600;
 }
 
+.time-info {
+  @apply flex items-center;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .list-header {
@@ -407,7 +405,7 @@ watch(
     @apply w-full justify-start;
   }
 
-  .decision-item .flex.items-center.justify-between {
+  .recommendation-item .flex.items-center.justify-between {
     @apply flex-col items-start space-y-4;
   }
 
@@ -417,6 +415,10 @@ watch(
 
   .action-buttons button {
     @apply flex-1 text-center;
+  }
+
+  .time-info {
+    @apply flex-col items-start space-y-1;
   }
 }
 </style>

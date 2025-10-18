@@ -15,9 +15,9 @@ useHead({
   },
 });
 
-const title = 'Nuxt Dashboard Template';
+const title = '股票 AI 策略回测决策系统';
 const description =
-  'A professional dashboard template built with Nuxt UI, featuring multiple pages, data visualization, and comprehensive management capabilities for creating powerful admin interfaces.';
+  '基于多模型投票机制的股票交易决策系统，提供股票推荐、决策点分析、多模型投票和回测性能评估功能，帮助投资者提高投资成功率并降低风险。';
 
 useSeoMeta({
   title,

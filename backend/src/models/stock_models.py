@@ -1,5 +1,5 @@
 """
-股票数据模型定义
+股票数据模型定义 - 根据数据模型文档更新
 """
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -7,260 +7,34 @@ from datetime import date, datetime
 from typing import Optional, List, Dict, Any
 from enum import Enum
 from decimal import Decimal
+import uuid
 
 
 class DecisionType(str, Enum):
     """决策类型枚举"""
-    BUY = "BUY"
-    SELL = "SELL"
-    HOLD = "HOLD"
-
-
-class VotingStrategy(str, Enum):
-    """投票策略枚举"""
-    MAJORITY = "majority"
-    WEIGHTED = "weighted"
-    CONFIDENCE = "confidence"
-
-
-class RiskLevel(str, Enum):
-    """风险等级枚举"""
-    LOW = "LOW"
-    MEDIUM = "MEDIUM"
-    HIGH = "HIGH"
+    BUY = "buy"
+    SELL = "sell"
+    HOLD = "hold"
 
 
 class ModelType(str, Enum):
     """模型类型枚举"""
     TECHNICAL = "technical"
-    MACHINE_LEARNING = "ml"
-    DEEP_LEARNING = "dl"
+    FUNDAMENTAL = "fundamental"
+    MACHINE_LEARNING = "machine_learning"
 
 
-class StockBase(BaseModel):
-    """股票基础模型"""
-    symbol: str = Field(..., description="股票代码")
-    name: str = Field(..., description="股票名称")
-    market: str = Field(..., description="市场类型")
-    is_active: bool = Field(True, description="是否活跃")
+class TradeType(str, Enum):
+    """交易类型枚举"""
+    BUY = "buy"
+    SELL = "sell"
 
 
-class StockCreate(StockBase):
-    """股票创建模型"""
-    pass
-
-
-class StockUpdate(BaseModel):
-    """股票更新模型"""
-    name: Optional[str] = None
-    market: Optional[str] = None
-    is_active: Optional[bool] = None
-
-
-class StockResponse(StockBase):
-    """股票响应模型"""
-    id: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class StockDailyDataBase(BaseModel):
-    """股票日线数据基础模型"""
-    symbol: str = Field(..., description="股票代码")
-    trade_date: date = Field(..., description="交易日期")
-    open_price: Decimal = Field(..., gt=0, description="开盘价")
-    high_price: Decimal = Field(..., gt=0, description="最高价")
-    low_price: Decimal = Field(..., gt=0, description="最低价")
-    close_price: Decimal = Field(..., gt=0, description="收盘价")
-    volume: int = Field(..., gt=0, description="成交量")
-    turnover: Optional[Decimal] = Field(None, description="成交额")
-
-
-class StockDailyDataCreate(StockDailyDataBase):
-    """股票日线数据创建模型"""
-    pass
-
-
-class StockDailyDataUpdate(BaseModel):
-    """股票日线数据更新模型"""
-    open_price: Optional[Decimal] = None
-    high_price: Optional[Decimal] = None
-    low_price: Optional[Decimal] = None
-    close_price: Optional[Decimal] = None
-    volume: Optional[int] = None
-    turnover: Optional[Decimal] = None
-
-
-class StockDailyDataResponse(StockDailyDataBase):
-    """股票日线数据响应模型"""
-    id: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class BacktestModelBase(BaseModel):
-    """回测模型基础模型"""
-    name: str = Field(..., description="模型名称")
-    description: Optional[str] = Field(None, description="模型描述")
-    model_type: ModelType = Field(..., description="模型类型")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="模型参数")
-    weight: Decimal = Field(1.0, ge=0, le=1, description="模型权重")
-    is_active: bool = Field(True, description="是否活跃")
-
-
-class BacktestModelCreate(BacktestModelBase):
-    """回测模型创建模型"""
-    pass
-
-
-class BacktestModelUpdate(BaseModel):
-    """回测模型更新模型"""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    model_type: Optional[ModelType] = None
-    parameters: Optional[Dict[str, Any]] = None
-    weight: Optional[Decimal] = None
-    is_active: Optional[bool] = None
-
-
-class BacktestModelResponse(BacktestModelBase):
-    """回测模型响应模型"""
-    id: int
-    created_at: datetime
-    performance_metrics: Optional[Dict[str, Any]] = Field(None, description="性能指标")
-    performance_history: Optional[List[Any]] = Field(None, description="性能历史")
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ModelSignal(BaseModel):
-    """模型信号模型"""
-    model_id: int = Field(..., description="模型ID")
-    decision: DecisionType = Field(..., description="决策类型")
-    confidence: Decimal = Field(..., ge=0, le=1, description="置信度")
-    signal_strength: Decimal = Field(..., ge=0, le=1, description="信号强度")
-    reasoning: Optional[str] = Field(None, description="决策理由")
-
-
-class ModelDecisionBase(BaseModel):
-    """模型决策基础模型"""
-    symbol: str = Field(..., description="股票代码")
-    trade_date: date = Field(..., description="交易日期")
-    model_id: int = Field(..., description="模型ID")
-    decision: DecisionType = Field(..., description="决策类型")
-    confidence: Decimal = Field(..., ge=0, le=1, description="置信度")
-    signal_strength: Decimal = Field(..., ge=0, le=1, description="信号强度")
-
-
-class ModelDecisionCreate(ModelDecisionBase):
-    """模型决策创建模型"""
-    pass
-
-
-class ModelDecisionResponse(ModelDecisionBase):
-    """模型决策响应模型"""
-    id: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class FinalDecisionBase(BaseModel):
-    """综合决策基础模型"""
-    symbol: str = Field(..., description="股票代码")
-    trade_date: date = Field(..., description="交易日期")
-    final_decision: DecisionType = Field(..., description="最终决策")
-    confidence_score: Decimal = Field(..., ge=0, le=1, description="综合置信度")
-    vote_summary: Dict[str, int] = Field(..., description="投票统计")
-    risk_level: RiskLevel = Field(..., description="风险等级")
-
-
-class FinalDecisionCreate(FinalDecisionBase):
-    """综合决策创建模型"""
-    pass
-
-
-class FinalDecisionResponse(FinalDecisionBase):
-    """综合决策响应模型"""
-    id: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ModelPerformanceBase(BaseModel):
-    """模型性能基础模型"""
-    model_id: int = Field(..., description="模型ID")
-    backtest_date: date = Field(..., description="回测日期")
-    accuracy: Optional[Decimal] = Field(None, ge=0, le=1, description="准确率")
-    precision: Optional[Decimal] = Field(None, ge=0, le=1, description="精确率")
-    recall: Optional[Decimal] = Field(None, ge=0, le=1, description="召回率")
-    f1_score: Optional[Decimal] = Field(None, ge=0, le=1, description="F1分数")
-    total_return: Optional[Decimal] = Field(None, description="总收益率")
-    sharpe_ratio: Optional[Decimal] = Field(None, description="夏普比率")
-    max_drawdown: Optional[Decimal] = Field(None, description="最大回撤")
-
-
-class ModelPerformanceCreate(ModelPerformanceBase):
-    """模型性能创建模型"""
-    pass
-
-
-class ModelPerformanceResponse(ModelPerformanceBase):
-    """模型性能响应模型"""
-    id: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class VotingConfig(BaseModel):
-    """投票配置模型"""
-    strategy: VotingStrategy = Field(VotingStrategy.WEIGHTED, description="投票策略")
-    threshold: Decimal = Field(0.6, ge=0, le=1, description="决策阈值")
-    min_confidence: Decimal = Field(0.6, ge=0, le=1, description="最小置信度")
-    enable_risk_control: bool = Field(True, description="启用风险控制")
-
-
-class RiskConfig(BaseModel):
-    """风险配置模型"""
-    max_daily_loss: Decimal = Field(0.05, ge=0, le=1, description="最大日亏损")
-    max_position_size: Decimal = Field(0.1, ge=0, le=1, description="最大仓位比例")
-    volatility_threshold: Decimal = Field(0.03, ge=0, description="波动率阈值")
-    enable_circuit_breaker: bool = Field(True, description="启用熔断机制")
-
-
-class DecisionRequest(BaseModel):
-    """决策请求模型"""
-    symbol: str = Field(..., description="股票代码")
-    trade_date: date = Field(..., description="交易日期")
-    current_position: Optional[Decimal] = Field(0.0, ge=0, le=1, description="当前仓位")
-
-
-class BatchDecisionRequest(BaseModel):
-    """批量决策请求模型"""
-    symbols: List[str] = Field(..., description="股票代码列表")
-    trade_date: date = Field(..., description="交易日期")
-
-
-class BacktestRequest(BaseModel):
-    """回测请求模型"""
-    symbol: str = Field(..., description="股票代码")
-    start_date: date = Field(..., description="开始日期")
-    end_date: date = Field(..., description="结束日期")
-    initial_capital: Decimal = Field(100000, gt=0, description="初始资金")
-    model_ids: Optional[List[int]] = Field(None, description="模型ID列表")
-
-
-class PortfolioBacktestRequest(BaseModel):
-    """组合回测请求模型"""
-    symbols: List[str] = Field(..., description="股票代码列表")
-    start_date: date = Field(..., description="开始日期")
-    end_date: date = Field(..., description="结束日期")
-    initial_capital: Decimal = Field(100000, gt=0, description="初始资金")
-    rebalance_frequency: str = Field("monthly", description="再平衡频率")
+class MarketType(str, Enum):
+    """市场类型枚举"""
+    A_SHARE = "A股"
+    HK_SHARE = "港股"
+    US_SHARE = "美股"
 
 
 class APIResponse(BaseModel):
@@ -277,3 +51,245 @@ class PaginatedResponse(BaseModel):
     total: int = Field(..., description="总记录数")
     skip: int = Field(0, description="跳过记录数")
     limit: int = Field(100, description="限制记录数")
+
+
+# 股票相关模型
+class StockBase(BaseModel):
+    """股票基础模型"""
+    symbol: str = Field(..., description="股票代码")
+    name: str = Field(..., description="股票名称")
+    industry: Optional[str] = Field(None, description="所属行业")
+    market: MarketType = Field(..., description="市场类型")
+    current_price: Optional[Decimal] = Field(None, gt=0, description="当前价格")
+    price_change: Optional[Decimal] = Field(None, description="价格变动")
+    price_change_percent: Optional[Decimal] = Field(None, ge=-50, le=50, description="涨跌幅")
+    volume: Optional[int] = Field(None, ge=0, description="成交量")
+    market_cap: Optional[Decimal] = Field(None, gt=0, description="市值")
+    pe_ratio: Optional[Decimal] = Field(None, gt=0, description="市盈率")
+    pb_ratio: Optional[Decimal] = Field(None, gt=0, description="市净率")
+    dividend_yield: Optional[Decimal] = Field(None, ge=0, description="股息率")
+
+
+class StockCreate(StockBase):
+    """股票创建模型"""
+    pass
+
+
+class StockUpdate(BaseModel):
+    """股票更新模型"""
+    name: Optional[str] = None
+    industry: Optional[str] = None
+    market: Optional[MarketType] = None
+    current_price: Optional[Decimal] = None
+    price_change: Optional[Decimal] = None
+    price_change_percent: Optional[Decimal] = None
+    volume: Optional[int] = None
+    market_cap: Optional[Decimal] = None
+    pe_ratio: Optional[Decimal] = None
+    pb_ratio: Optional[Decimal] = None
+    dividend_yield: Optional[Decimal] = None
+
+
+class StockResponse(StockBase):
+    """股票响应模型"""
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# 股票价格相关模型
+class StockPriceBase(BaseModel):
+    """股票价格基础模型"""
+    date: date = Field(..., description="交易日期")
+    open_price: Optional[Decimal] = Field(None, gt=0, description="开盘价")
+    high_price: Optional[Decimal] = Field(None, gt=0, description="最高价")
+    low_price: Optional[Decimal] = Field(None, gt=0, description="最低价")
+    close_price: Optional[Decimal] = Field(None, gt=0, description="收盘价")
+    volume: Optional[int] = Field(None, ge=0, description="成交量")
+    adjusted_close: Optional[Decimal] = Field(None, gt=0, description="调整后收盘价")
+
+
+class StockPriceCreate(StockPriceBase):
+    """股票价格创建模型"""
+    stock_id: uuid.UUID = Field(..., description="股票ID")
+
+
+class StockPriceResponse(StockPriceBase):
+    """股票价格响应模型"""
+    id: uuid.UUID
+    stock_id: uuid.UUID
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# AI 模型相关模型
+class AIModelBase(BaseModel):
+    """AI 模型基础模型"""
+    name: str = Field(..., description="模型名称")
+    model_type: ModelType = Field(..., description="模型类型")
+    description: Optional[str] = Field(None, description="模型描述")
+    weight: Decimal = Field(1.0, ge=0, le=1, description="投票权重")
+    is_active: bool = Field(True, description="是否启用")
+    performance_score: Optional[Decimal] = Field(None, ge=0, le=1, description="历史表现评分")
+
+
+class AIModelCreate(AIModelBase):
+    """AI 模型创建模型"""
+    pass
+
+
+class AIModelUpdate(BaseModel):
+    """AI 模型更新模型"""
+    name: Optional[str] = None
+    model_type: Optional[ModelType] = None
+    description: Optional[str] = None
+    weight: Optional[Decimal] = None
+    is_active: Optional[bool] = None
+    performance_score: Optional[Decimal] = None
+
+
+class AIModelResponse(AIModelBase):
+    """AI 模型响应模型"""
+    id: uuid.UUID
+    last_trained_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# 决策相关模型
+class DecisionBase(BaseModel):
+    """决策基础模型"""
+    decision_type: DecisionType = Field(..., description="决策类型")
+    confidence: Decimal = Field(..., ge=0, le=1, description="置信度")
+    target_price: Optional[Decimal] = Field(None, gt=0, description="目标价格")
+    stop_loss_price: Optional[Decimal] = Field(None, gt=0, description="止损价格")
+    time_horizon: Optional[int] = Field(None, gt=0, description="时间周期")
+    reasoning: Optional[str] = Field(None, description="决策理由")
+
+
+class DecisionCreate(DecisionBase):
+    """决策创建模型"""
+    stock_id: uuid.UUID = Field(..., description="股票ID")
+
+
+class DecisionResponse(DecisionBase):
+    """决策响应模型"""
+    id: uuid.UUID
+    stock_id: uuid.UUID
+    generated_at: datetime
+    expires_at: Optional[datetime]
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# 投票结果相关模型
+class VoteResultBase(BaseModel):
+    """投票结果基础模型"""
+    vote_type: DecisionType = Field(..., description="投票类型")
+    confidence: Decimal = Field(..., ge=0, le=1, description="模型置信度")
+    signal_strength: Decimal = Field(..., ge=-1, le=1, description="信号强度")
+    reasoning: Optional[str] = Field(None, description="模型推理过程")
+
+
+class VoteResultCreate(VoteResultBase):
+    """投票结果创建模型"""
+    decision_id: uuid.UUID = Field(..., description="决策ID")
+    model_id: uuid.UUID = Field(..., description="模型ID")
+
+
+class VoteResultResponse(VoteResultBase):
+    """投票结果响应模型"""
+    id: uuid.UUID
+    decision_id: uuid.UUID
+    model_id: uuid.UUID
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# 回测结果相关模型
+class BacktestResultBase(BaseModel):
+    """回测结果基础模型"""
+    start_date: date = Field(..., description="回测开始日期")
+    end_date: date = Field(..., description="回测结束日期")
+    total_return: Optional[Decimal] = Field(None, description="总收益率")
+    annual_return: Optional[Decimal] = Field(None, description="年化收益率")
+    sharpe_ratio: Optional[Decimal] = Field(None, description="夏普比率")
+    max_drawdown: Optional[Decimal] = Field(None, description="最大回撤")
+    win_rate: Optional[Decimal] = Field(None, ge=0, le=1, description="胜率")
+    profit_factor: Optional[Decimal] = Field(None, description="盈利因子")
+    total_trades: Optional[int] = Field(None, ge=0, description="总交易次数")
+    avg_trade_return: Optional[Decimal] = Field(None, description="平均交易收益率")
+
+
+class BacktestResultCreate(BacktestResultBase):
+    """回测结果创建模型"""
+    stock_id: uuid.UUID = Field(..., description="股票ID")
+    model_id: uuid.UUID = Field(..., description="模型ID")
+
+
+class BacktestResultResponse(BacktestResultBase):
+    """回测结果响应模型"""
+    id: uuid.UUID
+    stock_id: uuid.UUID
+    model_id: uuid.UUID
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# 交易记录相关模型
+class TradeRecordBase(BaseModel):
+    """交易记录基础模型"""
+    trade_type: TradeType = Field(..., description="交易类型")
+    entry_price: Optional[Decimal] = Field(None, gt=0, description="入场价格")
+    exit_price: Optional[Decimal] = Field(None, gt=0, description="出场价格")
+    quantity: Optional[int] = Field(None, gt=0, description="交易数量")
+    entry_date: Optional[datetime] = Field(None, description="入场时间")
+    exit_date: Optional[datetime] = Field(None, description="出场时间")
+    holding_period: Optional[int] = Field(None, ge=0, description="持有天数")
+    return_amount: Optional[Decimal] = Field(None, description="收益金额")
+    return_percent: Optional[Decimal] = Field(None, description="收益率")
+
+
+class TradeRecordCreate(TradeRecordBase):
+    """交易记录创建模型"""
+    stock_id: uuid.UUID = Field(..., description="股票ID")
+    decision_id: uuid.UUID = Field(..., description="决策ID")
+
+
+class TradeRecordResponse(TradeRecordBase):
+    """交易记录响应模型"""
+    id: uuid.UUID
+    stock_id: uuid.UUID
+    decision_id: uuid.UUID
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# 请求模型
+class RecommendationRequest(BaseModel):
+    """推荐请求模型"""
+    symbols: Optional[List[str]] = Field(None, description="股票代码列表")
+    limit: int = Field(10, ge=1, le=100, description="推荐数量限制")
+
+
+class DecisionDetailRequest(BaseModel):
+    """决策详情请求模型"""
+    decision_id: uuid.UUID = Field(..., description="决策ID")
+
+
+class BacktestRequest(BaseModel):
+    """回测请求模型"""
+    symbol: str = Field(..., description="股票代码")
+    start_date: date = Field(..., description="开始日期")
+    end_date: date = Field(..., description="结束日期")
+    initial_capital: Decimal = Field(100000, gt=0, description="初始资金")
+    model_ids: Optional[List[uuid.UUID]] = Field(None, description="模型ID列表")

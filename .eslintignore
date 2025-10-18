@@ -1,0 +1,52 @@
+# Dependencies
+
+node_modules/
+.nuxt/
+.output/
+dist/
+build/
+
+# IDE
+
+.vscode/
+.idea/
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Logs
+
+\*.log
+logs/
+
+# Environment variables
+
+.env
+.env.\*
+!.env.example
+
+# Package manager files
+
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# TypeScript
+
+\*.tsbuildinfo
+
+# Nuxt specific
+
+.nitro/
+.cache/
+.data/
+
+# Test files
+
+_.test.js
+_.test.ts
+_.spec.js
+_.spec.ts
+coverage/

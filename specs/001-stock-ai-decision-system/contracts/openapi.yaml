@@ -1,0 +1,722 @@
+openapi: 3.0.3
+info:
+  title: 股票 AI 策略回测决策系统 API
+  description: 基于多个 AI 策略回测模型的股票交易决策系统
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@stock-ai.com
+
+servers:
+  - url: http://localhost:8099/api/v1
+    description: 开发环境
+  - url: https://api.stock-ai.com/api/v1
+    description: 生产环境
+
+paths:
+  # 健康检查
+  /health:
+    get:
+      summary: 健康检查
+      description: 检查系统健康状态
+      tags:
+        - System
+      responses:
+        "200":
+          description: 系统健康
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: 服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # 股票相关 API
+  /stocks:
+    get:
+      summary: 获取股票列表
+      description: 获取股票基本信息列表，支持筛选和分页
+      tags:
+        - Stocks
+      parameters:
+        - name: symbol
+          in: query
+          description: 股票代码筛选
+          schema:
+            type: string
+        - name: industry
+          in: query
+          description: 行业筛选
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: 每页数量
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: 股票列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockListResponse"
+
+  /stocks/{symbol}:
+    get:
+      summary: 获取股票详情
+      description: 获取指定股票的详细信息
+      tags:
+        - Stocks
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          description: 股票代码
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 股票详情
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockDetailResponse"
+        "404":
+          description: 股票不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /stocks/{symbol}/prices:
+    get:
+      summary: 获取股票价格历史
+      description: 获取指定股票的历史价格数据
+      tags:
+        - Stocks
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          description: 股票代码
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          description: 开始日期 (YYYY-MM-DD)
+          schema:
+            type: string
+        - name: end_date
+          in: query
+          description: 结束日期 (YYYY-MM-DD)
+          schema:
+            type: string
+        - name: period
+          in: query
+          description: 时间周期 (1d, 1w, 1m, 1y)
+          schema:
+            type: string
+            default: 1m
+      responses:
+        "200":
+          description: 价格历史数据
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockPriceResponse"
+
+  # 决策相关 API
+  /decisions:
+    get:
+      summary: 获取决策列表
+      description: 获取系统生成的决策列表
+      tags:
+        - Decisions
+      parameters:
+        - name: symbol
+          in: query
+          description: 股票代码筛选
+          schema:
+            type: string
+        - name: decision_type
+          in: query
+          description: 决策类型筛选 (buy/sell/hold)
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: 状态筛选 (active/expired/executed)
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: 每页数量
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: 决策列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionListResponse"
+
+  /decisions/recommendations:
+    get:
+      summary: 获取股票推荐
+      description: 获取基于多模型投票的股票推荐列表
+      tags:
+        - Decisions
+      parameters:
+        - name: industry
+          in: query
+          description: 行业筛选
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 推荐数量
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: 推荐股票列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationResponse"
+
+  /decisions/{decision_id}:
+    get:
+      summary: 获取决策详情
+      description: 获取指定决策的详细信息，包括投票详情
+      tags:
+        - Decisions
+      parameters:
+        - name: decision_id
+          in: path
+          required: true
+          description: 决策ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 决策详情
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionDetailResponse"
+        "404":
+          description: 决策不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # 模型相关 API
+  /models:
+    get:
+      summary: 获取模型列表
+      description: 获取所有 AI 模型的基本信息
+      tags:
+        - Models
+      responses:
+        "200":
+          description: 模型列表
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelListResponse"
+
+  /models/{model_id}/performance:
+    get:
+      summary: 获取模型性能
+      description: 获取指定模型的历史回测性能数据
+      tags:
+        - Models
+      parameters:
+        - name: model_id
+          in: path
+          required: true
+          description: 模型ID
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          description: 时间周期 (1m, 3m, 6m, 1y, all)
+          schema:
+            type: string
+            default: 1y
+      responses:
+        "200":
+          description: 模型性能数据
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelPerformanceResponse"
+
+  # 回测相关 API
+  /backtest:
+    post:
+      summary: 执行回测
+      description: 对指定股票和模型执行历史回测
+      tags:
+        - Backtest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BacktestRequest"
+      responses:
+        "200":
+          description: 回测结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BacktestResponse"
+        "400":
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    # 基础响应格式
+    BaseResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          description: 响应数据
+        message:
+          type: string
+          description: 响应消息
+        status:
+          type: string
+          description: 状态码
+          enum: [success, error]
+
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            error_code:
+              type: string
+              description: 错误代码
+            details:
+              type: object
+              description: 错误详情
+
+    HealthResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, degraded, unhealthy]
+                timestamp:
+                  type: string
+                  format: date-time
+                version:
+                  type: string
+
+    # 股票相关模型
+    Stock:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+        name:
+          type: string
+        industry:
+          type: string
+        current_price:
+          type: number
+          format: float
+        price_change:
+          type: number
+          format: float
+        price_change_percent:
+          type: number
+          format: float
+        volume:
+          type: integer
+        market_cap:
+          type: number
+          format: float
+        pe_ratio:
+          type: number
+          format: float
+        pb_ratio:
+          type: number
+          format: float
+
+    StockListResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                stocks:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Stock"
+                pagination:
+                  $ref: "#/components/schemas/Pagination"
+
+    StockDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/Stock"
+
+    StockPrice:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        open:
+          type: number
+          format: float
+        high:
+          type: number
+          format: float
+        low:
+          type: number
+          format: float
+        close:
+          type: number
+          format: float
+        volume:
+          type: integer
+        adjusted_close:
+          type: number
+          format: float
+
+    StockPriceResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                symbol:
+                  type: string
+                prices:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/StockPrice"
+
+    # 决策相关模型
+    Decision:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        stock:
+          $ref: "#/components/schemas/Stock"
+        decision_type:
+          type: string
+          enum: [buy, sell, hold]
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        target_price:
+          type: number
+          format: float
+        stop_loss_price:
+          type: number
+          format: float
+        time_horizon:
+          type: integer
+        reasoning:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+
+    DecisionListResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                decisions:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Decision"
+                pagination:
+                  $ref: "#/components/schemas/Pagination"
+
+    VoteResult:
+      type: object
+      properties:
+        model_id:
+          type: string
+          format: uuid
+        model_name:
+          type: string
+        vote_type:
+          type: string
+          enum: [buy, sell, hold]
+        confidence:
+          type: number
+          format: float
+        signal_strength:
+          type: number
+          format: float
+        reasoning:
+          type: string
+
+    DecisionDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                decision:
+                  $ref: "#/components/schemas/Decision"
+                vote_results:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/VoteResult"
+
+    RecommendationResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                recommendations:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Decision"
+
+    # 模型相关模型
+    AIModel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        model_type:
+          type: string
+        description:
+          type: string
+        weight:
+          type: number
+          format: float
+        is_active:
+          type: boolean
+        performance_score:
+          type: number
+          format: float
+        last_trained_at:
+          type: string
+          format: date-time
+
+    ModelListResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                models:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/AIModel"
+
+    ModelPerformanceResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                model:
+                  $ref: "#/components/schemas/AIModel"
+                performance_metrics:
+                  type: object
+                  properties:
+                    total_return:
+                      type: number
+                      format: float
+                    annual_return:
+                      type: number
+                      format: float
+                    sharpe_ratio:
+                      type: number
+                      format: float
+                    max_drawdown:
+                      type: number
+                      format: float
+                    win_rate:
+                      type: number
+                      format: float
+
+    # 回测相关模型
+    BacktestRequest:
+      type: object
+      required:
+        - symbol
+        - start_date
+        - end_date
+      properties:
+        symbol:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        initial_capital:
+          type: number
+          format: float
+          default: 100000
+        model_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    BacktestResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                backtest_id:
+                  type: string
+                  format: uuid
+                status:
+                  type: string
+                  enum: [running, completed, failed]
+                results:
+                  type: object
+                  properties:
+                    total_return:
+                      type: number
+                      format: float
+                    annual_return:
+                      type: number
+                      format: float
+                    sharpe_ratio:
+                      type: number
+                      format: float
+                    max_drawdown:
+                      type: number
+                      format: float
+                    win_rate:
+                      type: number
+                      format: float
+                    trade_records:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/TradeRecord"
+
+    TradeRecord:
+      type: object
+      properties:
+        entry_date:
+          type: string
+          format: date-time
+        exit_date:
+          type: string
+          format: date-time
+        entry_price:
+          type: number
+          format: float
+        exit_price:
+          type: number
+          format: float
+        quantity:
+          type: integer
+        return_percent:
+          type: number
+          format: float
+        holding_period:
+          type: integer
+
+    # 通用模型
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+tags:
+  - name: System
+    description: 系统管理相关 API
+  - name: Stocks
+    description: 股票数据相关 API
+  - name: Decisions
+    description: 决策相关 API
+  - name: Models
+    description: AI 模型相关 API
+  - name: Backtest
+    description: 回测相关 API

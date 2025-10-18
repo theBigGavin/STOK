@@ -1,34 +1,44 @@
 """
-机器学习模型基类
+机器学习模型基类 - 根据数据模型文档更新
 """
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from datetime import datetime
 import pandas as pd
+import uuid
 
 from src.models.stock_models import (
-    DecisionType, ModelSignal, ModelType
+    DecisionType, ModelType
 )
 
 
 class BaseBacktestModel(ABC):
     """回测模型基类"""
 
-    def __init__(self, model_id: int, name: str, description: str = ""):
+    def __init__(self, model_id: uuid.UUID, name: str, model_type: ModelType, description: str = ""):
         self.model_id = model_id
         self.name = name
+        self.model_type = model_type
         self.description = description
-        self.model_type: ModelType = ModelType.TECHNICAL
         self.parameters: Dict[str, Any] = {}
+        self.weight: float = 1.0
         self.is_trained: bool = False
-        self.is_active: bool = True  # 添加is_active属性
-        self.performance_metrics: Dict[str, float] = {}
+        self.is_active: bool = True
+        self.performance_score: Optional[float] = None
+        self.last_trained_at: Optional[datetime] = None
         self.created_at: datetime = datetime.now()
 
     @abstractmethod
-    def generate_signal(self, data: pd.DataFrame) -> ModelSignal:
-        """生成交易信号"""
+    def generate_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """生成交易信号
+        
+        返回字典必须包含:
+        - decision: DecisionType (buy/sell/hold)
+        - confidence: float (0-1)
+        - signal_strength: float (-1 到 1)
+        - reasoning: str (决策理由)
+        """
         pass
 
     @abstractmethod
@@ -50,19 +60,19 @@ class BaseBacktestModel(ABC):
             signals.append(signal)
             
             # 简单的交易逻辑
-            if signal.decision == DecisionType.BUY and current_position == 0:
+            if signal['decision'] == DecisionType.BUY and current_position == 0:
                 # 买入
                 shares = capital // data.iloc[i]['close_price']
                 if shares > 0:
                     current_position = shares
                     capital -= shares * data.iloc[i]['close_price']
-            elif signal.decision == DecisionType.SELL and current_position > 0:
+            elif signal['decision'] == DecisionType.SELL and current_position > 0:
                 # 卖出
                 capital += current_position * data.iloc[i]['close_price']
                 current_position = 0
             
             positions.append({
-                'date': data.iloc[i]['trade_date'],
+                'date': data.iloc[i]['date'],
                 'position': current_position,
                 'capital': capital + (current_position * data.iloc[i]['close_price'] if current_position > 0 else 0)
             })
@@ -90,8 +100,8 @@ class BaseBacktestModel(ABC):
             if current_position > prev_position:
                 # 买入
                 trades.append({
-                    'type': 'BUY',
-                    'date': data.iloc[i]['trade_date'],
+                    'type': 'buy',
+                    'date': data.iloc[i]['date'],
                     'price': data.iloc[i]['close_price'],
                     'shares': current_position - prev_position,
                     'value': (current_position - prev_position) * data.iloc[i]['close_price']
@@ -99,8 +109,8 @@ class BaseBacktestModel(ABC):
             elif current_position < prev_position:
                 # 卖出
                 trades.append({
-                    'type': 'SELL',
-                    'date': data.iloc[i]['trade_date'],
+                    'type': 'sell',
+                    'date': data.iloc[i]['date'],
                     'price': data.iloc[i]['close_price'],
                     'shares': prev_position - current_position,
                     'value': (prev_position - current_position) * data.iloc[i]['close_price']
@@ -112,18 +122,21 @@ class BaseBacktestModel(ABC):
 
     def update_performance(self, metrics: Dict[str, float]):
         """更新性能指标"""
-        self.performance_metrics.update(metrics)
+        self.performance_score = metrics.get('performance_score', self.performance_score)
 
     def get_info(self) -> Dict[str, Any]:
         """获取模型信息"""
         return {
             'model_id': self.model_id,
             'name': self.name,
-            'description': self.description,
             'model_type': self.model_type,
+            'description': self.description,
             'parameters': self.parameters,
+            'weight': self.weight,
             'is_trained': self.is_trained,
-            'performance_metrics': self.performance_metrics,
+            'is_active': self.is_active,
+            'performance_score': self.performance_score,
+            'last_trained_at': self.last_trained_at,
             'created_at': self.created_at
         }
 
@@ -132,7 +145,7 @@ class ModelManager:
     """模型管理器"""
 
     def __init__(self):
-        self.models: Dict[int, BaseBacktestModel] = {}
+        self.models: Dict[uuid.UUID, BaseBacktestModel] = {}
         self.model_registry = self._initialize_model_registry()
 
     def _initialize_model_registry(self) -> Dict[str, Any]:
@@ -143,7 +156,7 @@ class ModelManager:
             'macd_model': None
         }
 
-    def register_model(self, model_id: int, model_type: str, **kwargs) -> BaseBacktestModel:
+    def register_model(self, model_id: uuid.UUID, model_type: str, **kwargs) -> BaseBacktestModel:
         """注册新模型"""
         model_class = self.model_registry.get(model_type)
         if not model_class:
@@ -157,16 +170,16 @@ class ModelManager:
         self.models[model_id] = model
         return model
 
-    def get_model(self, model_id: int) -> Optional[BaseBacktestModel]:
+    def get_model(self, model_id: uuid.UUID) -> Optional[BaseBacktestModel]:
         """获取模型"""
         return self.models.get(model_id)
 
-    def remove_model(self, model_id: int):
+    def remove_model(self, model_id: uuid.UUID):
         """移除模型"""
         if model_id in self.models:
             del self.models[model_id]
 
-    def run_models_on_data(self, data: pd.DataFrame) -> Dict[int, Dict[str, Any]]:
+    def run_models_on_data(self, data: pd.DataFrame) -> Dict[uuid.UUID, Dict[str, Any]]:
         """在所有模型上运行数据"""
         results = {}
         for model_id, model in self.models.items():
@@ -174,7 +187,7 @@ class ModelManager:
                 signal = model.generate_signal(data)
                 results[model_id] = {
                     'model_name': model.name,
-                    'signal': signal.model_dump() if hasattr(signal, 'model_dump') else signal,
+                    'signal': signal,
                     'success': True
                 }
             except Exception as e:

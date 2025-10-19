@@ -747,7 +747,7 @@ const showConfigModal = (model: ModelInfo) => {
   // 这里可以打开更详细的配置模态框
 };
 
-const evaluateModel = async (modelId: number) => {
+const evaluateModel = async (modelId: string) => {
   try {
     await modelStore.reevaluateModel(modelId);
     // 显示成功提示

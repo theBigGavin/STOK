@@ -182,3 +182,36 @@ export interface SortOption {
   field: 'confidence' | 'votes' | 'symbol' | 'price' | 'date';
   direction: 'asc' | 'desc';
 }
+
+// 决策结果类型
+export interface DecisionResult {
+  symbol: string;
+  tradeDate: string;
+  timestamp: string;
+  finalDecision: {
+    decision: 'BUY' | 'SELL' | 'HOLD';
+    confidence: number;
+  };
+  riskAssessment: {
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  };
+}
+
+// 模型决策类型
+export interface ModelDecision {
+  modelId: string;
+  modelName: string;
+  voteType: 'BUY' | 'SELL' | 'HOLD';
+  confidence: number;
+  signalStrength: number;
+  reasoning?: string;
+}
+
+// 最近决策数据类型（用于仪表盘）
+export interface RecentDecision {
+  symbol: string;
+  decision: 'BUY' | 'SELL' | 'HOLD';
+  confidence: number;
+  timestamp: string;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+}

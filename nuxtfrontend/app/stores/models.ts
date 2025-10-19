@@ -8,27 +8,19 @@ import type { ModelInfo } from '~/types/models';
 import { modelApi, useCachedModelApi } from '~/api/models';
 import { useErrorHandler } from '~/composables/errorHandler';
 
-// 模型性能指标接口
+// 模型性能指标接口 - 与API返回的数据结构保持一致
 interface ModelPerformance {
-  modelId: number;
   modelName: string;
-  metrics: {
-    accuracy?: number;
-    precision?: number;
-    recall?: number;
-    f1Score?: number;
-    totalReturn?: number;
-    sharpeRatio?: number;
-    maxDrawdown?: number;
-    winRate?: number;
-  };
+  accuracy: number;
+  totalReturn: number;
+  sharpeRatio: number;
+  winRate: number;
   lastUpdated: string;
-  dataPoints: number;
 }
 
 // 模型权重配置接口
 interface ModelWeightConfig {
-  modelId: number;
+  modelId: string;
   weight: number;
   isActive: boolean;
   reason?: string;
@@ -37,7 +29,7 @@ interface ModelWeightConfig {
 // 模型训练状态接口
 interface ModelTrainingStatus {
   trainingId: string;
-  modelId: number;
+  modelId: string;
   status: 'pending' | 'training' | 'completed' | 'failed';
   progress?: number;
   estimatedCompletion?: string;
@@ -49,7 +41,7 @@ interface ModelState {
   // 模型列表
   models: ModelInfo[];
   // 模型性能指标缓存
-  modelPerformance: Map<number, ModelPerformance>;
+  modelPerformance: Map<string, ModelPerformance>;
   // 加载状态
   loading: boolean;
   // 错误信息
@@ -212,17 +204,16 @@ export const useModelStore = defineStore('models', () => {
     calculateModelScore(model: ModelInfo, performance?: ModelPerformance): number {
       if (!performance) return 0;
 
-      const metrics = performance.metrics;
       let score = 0;
 
       // 基于准确率
-      if (metrics.accuracy) score += metrics.accuracy * 0.3;
+      if (performance.accuracy) score += performance.accuracy * 0.3;
       // 基于总回报
-      if (metrics.totalReturn) score += Math.max(0, metrics.totalReturn) * 0.3;
+      if (performance.totalReturn) score += Math.max(0, performance.totalReturn) * 0.3;
       // 基于夏普比率
-      if (metrics.sharpeRatio) score += Math.max(0, metrics.sharpeRatio) * 0.2;
+      if (performance.sharpeRatio) score += Math.max(0, performance.sharpeRatio) * 0.2;
       // 基于胜率
-      if (metrics.winRate) score += metrics.winRate * 0.2;
+      if (performance.winRate) score += performance.winRate * 0.2;
 
       return score;
     },
@@ -231,12 +222,43 @@ export const useModelStore = defineStore('models', () => {
      * 更新模型统计信息
      */
     updateStats() {
+      // 添加类型安全检查，确保state.models是数组
+      if (!Array.isArray(state.models)) {
+        console.warn('state.models不是数组，重置为空数组');
+        state.models = [];
+        // 重置统计信息
+        state.stats = {
+          totalModels: 0,
+          activeModels: 0,
+          technicalModels: 0,
+          mlModels: 0,
+          dlModels: 0,
+          avgAccuracy: 0,
+          bestModel: null,
+        };
+        return;
+      }
+
+      // 如果没有模型数据，直接返回
+      if (state.models.length === 0) {
+        state.stats = {
+          totalModels: 0,
+          activeModels: 0,
+          technicalModels: 0,
+          mlModels: 0,
+          dlModels: 0,
+          avgAccuracy: 0,
+          bestModel: null,
+        };
+        return;
+      }
+
       const totalModels = state.models.length;
       const activeModels = state.models.filter(model => model.isActive).length;
 
       const technicalModels = state.models.filter(model => model.modelType === 'technical').length;
-      const mlModels = state.models.filter(model => model.modelType === 'ml').length;
-      const dlModels = state.models.filter(model => model.modelType === 'dl').length;
+      const mlModels = state.models.filter(model => model.modelType === 'machine_learning').length;
+      const dlModels = 0; // 目前没有深度学习模型
 
       // 计算平均准确率
       const modelsWithAccuracy = state.models.filter(
@@ -245,9 +267,9 @@ export const useModelStore = defineStore('models', () => {
       const avgAccuracy =
         modelsWithAccuracy.length > 0
           ? modelsWithAccuracy.reduce(
-              (sum, model) => sum + (model.performanceMetrics?.accuracy || 0),
-              0
-            ) / modelsWithAccuracy.length
+            (sum, model) => sum + (model.performanceMetrics?.accuracy || 0),
+            0
+          ) / modelsWithAccuracy.length
           : 0;
 
       // 找出最佳模型
@@ -346,10 +368,12 @@ export const useModelStore = defineStore('models', () => {
       state.error = null;
 
       try {
-        const models = await cachedModelApi.getModels();
-        state.models = models;
+        const response = await cachedModelApi.getModels();
+        console.log('从缓存获取模型列表:', response);
+        // 从响应对象中提取 data 数组
+        state.models = response.data || [];
         privateMethods.updateStats();
-        return models;
+        return state.models;
       } catch (error) {
         state.error = handleApiError(error).message;
         throw error;
@@ -386,10 +410,12 @@ export const useModelStore = defineStore('models', () => {
       state.error = null;
 
       try {
-        const models = await cachedModelApi.getActiveModels();
-        state.models = models;
+        const response = await cachedModelApi.getActiveModels();
+        console.log('从缓存获取活跃模型列表:', response);
+        // 从响应对象中提取 data 数组
+        state.models = response.data || [];
         privateMethods.updateStats();
-        return models;
+        return state.models;
       } catch (error) {
         state.error = handleApiError(error).message;
         throw error;
@@ -401,7 +427,7 @@ export const useModelStore = defineStore('models', () => {
     /**
      * 获取模型详情
      */
-    async fetchModelDetail(modelId: number) {
+    async fetchModelDetail(modelId: string) {
       state.loading = true;
       state.error = null;
 
@@ -429,7 +455,7 @@ export const useModelStore = defineStore('models', () => {
     /**
      * 获取模型详情（带缓存）
      */
-    async fetchModelDetailCached(modelId: number) {
+    async fetchModelDetailCached(modelId: string) {
       state.loading = true;
       state.error = null;
 
@@ -457,7 +483,7 @@ export const useModelStore = defineStore('models', () => {
     /**
      * 获取模型性能指标
      */
-    async fetchModelPerformance(modelId: number) {
+    async fetchModelPerformance(modelId: string) {
       state.loading = true;
       state.error = null;
 
@@ -476,7 +502,7 @@ export const useModelStore = defineStore('models', () => {
     /**
      * 获取模型性能指标（带缓存）
      */
-    async fetchModelPerformanceCached(modelId: number) {
+    async fetchModelPerformanceCached(modelId: string) {
       state.loading = true;
       state.error = null;
 
@@ -503,9 +529,10 @@ export const useModelStore = defineStore('models', () => {
         const performanceList = await modelApi.getAllModelPerformance();
 
         // 更新性能指标缓存
-        performanceList.forEach(performance => {
-          state.modelPerformance.set(performance.modelId, performance);
-        });
+        // 由于API返回的性能数据没有modelId，我们暂时不缓存
+        // performanceList.forEach(performance => {
+        //   state.modelPerformance.set(performance.modelId, performance);
+        // });
 
         return performanceList;
       } catch (error) {
@@ -527,9 +554,10 @@ export const useModelStore = defineStore('models', () => {
         const performanceList = await cachedModelApi.getAllModelPerformance();
 
         // 更新性能指标缓存
-        performanceList.forEach(performance => {
-          state.modelPerformance.set(performance.modelId, performance);
-        });
+        // 由于API返回的性能数据没有modelId，我们暂时不缓存
+        // performanceList.forEach(performance => {
+        //   state.modelPerformance.set(performance.modelId, performance);
+        // });
 
         return performanceList;
       } catch (error) {
@@ -543,19 +571,26 @@ export const useModelStore = defineStore('models', () => {
     /**
      * 更新模型权重
      */
-    async updateModelWeight(modelId: number, weight: number) {
+    async updateModelWeight(modelId: string, weight: number) {
       state.loading = true;
       state.error = null;
 
       try {
         const config = await modelApi.updateModelWeight(modelId, weight);
 
-        // 更新权重配置
+        // 更新权重配置 - 需要将配置中的modelId转换为字符串以匹配前端类型
+        const weightConfig: ModelWeightConfig = {
+          modelId: modelId,
+          weight: config.weight,
+          isActive: config.isActive,
+          reason: config.reason
+        };
+
         const existingIndex = state.weightConfigs.findIndex(c => c.modelId === modelId);
         if (existingIndex !== -1) {
-          state.weightConfigs[existingIndex] = config;
+          state.weightConfigs[existingIndex] = weightConfig;
         } else {
-          state.weightConfigs.push(config);
+          state.weightConfigs.push(weightConfig);
         }
 
         // 更新模型列表中的权重
@@ -567,7 +602,7 @@ export const useModelStore = defineStore('models', () => {
         // 清除相关缓存
         cachedModelApi.clearModelCache();
 
-        return config;
+        return weightConfig;
       } catch (error) {
         state.error = handleApiError(error).message;
         throw error;
@@ -579,20 +614,30 @@ export const useModelStore = defineStore('models', () => {
     /**
      * 批量更新模型权重
      */
-    async updateModelWeights(weights: Record<number, number>) {
+    async updateModelWeights(weights: Record<string, number>) {
       state.loading = true;
       state.error = null;
 
       try {
-        const configs = await modelApi.updateModelWeights(weights);
+        // 将字符串键转换为数字键以匹配后端API
+        const numericWeights: Record<number, number> = {};
+        Object.entries(weights).forEach(([modelId, weight]) => {
+          numericWeights[parseInt(modelId)] = weight;
+        });
 
-        // 更新权重配置
-        state.weightConfigs = configs;
+        const configs = await modelApi.updateModelWeights(numericWeights);
+
+        // 更新权重配置 - 转换配置中的modelId为字符串
+        state.weightConfigs = configs.map(config => ({
+          modelId: config.modelId.toString(),
+          weight: config.weight,
+          isActive: config.isActive,
+          reason: config.reason
+        }));
 
         // 更新模型列表中的权重
         Object.entries(weights).forEach(([modelId, weight]) => {
-          const id = parseInt(modelId);
-          const modelIndex = state.models.findIndex(m => m.modelId === id);
+          const modelIndex = state.models.findIndex(m => m.modelId === modelId);
           if (modelIndex !== -1) {
             state.models[modelIndex]!.weight = weight;
           }
@@ -601,7 +646,7 @@ export const useModelStore = defineStore('models', () => {
         // 清除相关缓存
         cachedModelApi.clearModelCache();
 
-        return configs;
+        return state.weightConfigs;
       } catch (error) {
         state.error = handleApiError(error).message;
         throw error;
@@ -613,7 +658,7 @@ export const useModelStore = defineStore('models', () => {
     /**
      * 启用/禁用模型
      */
-    async toggleModelActive(modelId: number, isActive: boolean) {
+    async toggleModelActive(modelId: string, isActive: boolean) {
       state.loading = true;
       state.error = null;
 
@@ -643,7 +688,7 @@ export const useModelStore = defineStore('models', () => {
     /**
      * 重新评估模型性能
      */
-    async reevaluateModel(modelId: number) {
+    async reevaluateModel(modelId: string) {
       state.loading = true;
       state.error = null;
 

@@ -3,7 +3,7 @@
  * 提供交易决策生成、批量决策、决策历史查询等功能
  */
 
-import type { DecisionResult, ModelDecision } from '~/types/decisions';
+import type { DecisionResult, ModelDecision, RecentDecision } from '~/types/decisions';
 import type { DecisionQueryParams } from '~/types/query';
 
 // 批量决策响应类型
@@ -222,6 +222,34 @@ export const decisionApi = {
       }
 
       return response.data.decision;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  /**
+   * 获取最近决策列表
+   */
+  async getRecentDecisions(
+    limit: number = 10,
+    skip: number = 0
+  ): Promise<RecentDecision[]> {
+    const { request, handleApiError } = useApiWithErrorHandler();
+
+    try {
+      const response = await request('/decisions/recent', {
+        method: 'GET',
+        params: {
+          limit,
+          skip,
+        },
+      });
+
+      if (!response.data) {
+        throw new Error('API响应数据为空');
+      }
+
+      return response.data;
     } catch (error) {
       throw handleApiError(error);
     }

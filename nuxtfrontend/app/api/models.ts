@@ -5,27 +5,19 @@
 
 import type { ModelInfo } from '~/types/models';
 
-// 模型性能指标类型
+// 模型性能指标类型 - 匹配后端API返回的数据结构
 interface ModelPerformance {
-  modelId: number;
   modelName: string;
-  metrics: {
-    accuracy?: number;
-    precision?: number;
-    recall?: number;
-    f1Score?: number;
-    totalReturn?: number;
-    sharpeRatio?: number;
-    maxDrawdown?: number;
-    winRate?: number;
-  };
+  accuracy: number;
+  totalReturn: number;
+  sharpeRatio: number;
+  winRate: number;
   lastUpdated: string;
-  dataPoints: number;
 }
 
 // 模型权重配置类型
 interface ModelWeightConfig {
-  modelId: number;
+  modelId: string;
   weight: number;
   isActive: boolean;
   reason?: string;
@@ -71,7 +63,22 @@ export const modelApi = {
         throw new Error('API响应数据为空');
       }
 
-      return response.data;
+      // 后端返回的是APIResponse格式，需要提取data字段
+      const apiResponse = response.data;
+      let rawModels: Record<string, unknown>[] = [];
+
+      if (apiResponse.data && apiResponse.data.data && Array.isArray(apiResponse.data.data)) {
+        // 处理分页响应格式
+        rawModels = apiResponse.data.data;
+      } else if (Array.isArray(apiResponse.data)) {
+        // 处理直接数组格式
+        rawModels = apiResponse.data;
+      } else {
+        throw new Error('API响应数据格式错误');
+      }
+
+      // 转换后端数据为前端格式
+      return rawModels.map(transformApiModelToFrontend);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -92,7 +99,22 @@ export const modelApi = {
         throw new Error('API响应数据为空');
       }
 
-      return response.data;
+      // 后端返回的是APIResponse格式，需要提取data字段
+      const apiResponse = response.data;
+      let rawModels: Record<string, unknown>[] = [];
+
+      if (apiResponse.data && apiResponse.data.data && Array.isArray(apiResponse.data.data)) {
+        // 处理分页响应格式
+        rawModels = apiResponse.data.data;
+      } else if (Array.isArray(apiResponse.data)) {
+        // 处理直接数组格式
+        rawModels = apiResponse.data;
+      } else {
+        throw new Error('API响应数据格式错误');
+      }
+
+      // 转换后端数据为前端格式
+      return rawModels.map(transformApiModelToFrontend);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -101,7 +123,7 @@ export const modelApi = {
   /**
    * 获取模型详情
    */
-  async getModelDetail(modelId: number): Promise<ModelInfo> {
+  async getModelDetail(modelId: string): Promise<ModelInfo> {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
@@ -113,7 +135,13 @@ export const modelApi = {
         throw new Error('API响应数据为空');
       }
 
-      return response.data;
+      // 后端返回的是APIResponse格式，需要提取data字段
+      const apiResponse = response.data;
+      if (apiResponse.data) {
+        return transformApiModelToFrontend(apiResponse.data);
+      } else {
+        throw new Error('API响应数据格式错误');
+      }
     } catch (error) {
       throw handleApiError(error);
     }
@@ -122,7 +150,7 @@ export const modelApi = {
   /**
    * 获取模型性能指标
    */
-  async getModelPerformance(modelId: number): Promise<ModelPerformance> {
+  async getModelPerformance(modelId: string): Promise<ModelPerformance> {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
@@ -155,7 +183,13 @@ export const modelApi = {
         throw new Error('API响应数据为空');
       }
 
-      return response.data;
+      // 后端返回的是APIResponse格式，需要提取data字段
+      const apiResponse = response.data;
+      if (apiResponse.data && Array.isArray(apiResponse.data)) {
+        return apiResponse.data;
+      } else {
+        throw new Error('API响应数据格式错误');
+      }
     } catch (error) {
       throw handleApiError(error);
     }
@@ -164,7 +198,7 @@ export const modelApi = {
   /**
    * 更新模型权重
    */
-  async updateModelWeight(modelId: number, weight: number): Promise<ModelWeightConfig> {
+  async updateModelWeight(modelId: string, weight: number): Promise<ModelWeightConfig> {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
@@ -208,7 +242,7 @@ export const modelApi = {
   /**
    * 启用/禁用模型
    */
-  async toggleModelActive(modelId: number, isActive: boolean): Promise<ModelInfo> {
+  async toggleModelActive(modelId: string, isActive: boolean): Promise<ModelInfo> {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
@@ -273,7 +307,7 @@ export const modelApi = {
   /**
    * 删除模型
    */
-  async deleteModel(modelId: number): Promise<{ success: boolean; message: string }> {
+  async deleteModel(modelId: string): Promise<{ success: boolean; message: string }> {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
@@ -294,7 +328,7 @@ export const modelApi = {
   /**
    * 重新评估模型性能
    */
-  async reevaluateModel(modelId: number): Promise<ModelPerformance> {
+  async reevaluateModel(modelId: string): Promise<ModelPerformance> {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {
@@ -323,23 +357,25 @@ export const useCachedModelApi = () => {
     /**
      * 获取所有模型列表（带缓存）
      */
-    async getModels(ttl: number = 10 * 60 * 1000): Promise<ModelInfo[]> {
+    async getModels(ttl: number = 10 * 60 * 1000): Promise<{ data: ModelInfo[]; total: number; skip: number; limit: number }> {
       const cacheKey = 'models:all';
-      return cachedGet<ModelInfo[]>('/models', undefined, cacheKey, ttl);
+      const response = await cachedGet<{ data: ModelInfo[]; total: number; skip: number; limit: number }>('/models', undefined, cacheKey, ttl);
+      return response;
     },
 
     /**
      * 获取活跃模型列表（带缓存）
      */
-    async getActiveModels(ttl: number = 5 * 60 * 1000): Promise<ModelInfo[]> {
+    async getActiveModels(ttl: number = 5 * 60 * 1000): Promise<{ data: ModelInfo[]; total: number; skip: number; limit: number }> {
       const cacheKey = 'models:active';
-      return cachedGet<ModelInfo[]>('/models/active', undefined, cacheKey, ttl);
+      const response = await cachedGet<{ data: ModelInfo[]; total: number; skip: number; limit: number }>('/models/active', undefined, cacheKey, ttl);
+      return response;
     },
 
     /**
      * 获取模型详情（带缓存）
      */
-    async getModelDetail(modelId: number, ttl: number = 15 * 60 * 1000): Promise<ModelInfo> {
+    async getModelDetail(modelId: string, ttl: number = 15 * 60 * 1000): Promise<ModelInfo> {
       const cacheKey = `model:detail:${modelId}`;
       return cachedGet<ModelInfo>(`/models/${modelId}`, undefined, cacheKey, ttl);
     },
@@ -348,7 +384,7 @@ export const useCachedModelApi = () => {
      * 获取模型性能指标（带缓存）
      */
     async getModelPerformance(
-      modelId: number,
+      modelId: string,
       ttl: number = 30 * 60 * 1000
     ): Promise<ModelPerformance> {
       const cacheKey = `model:performance:${modelId}`;
@@ -376,6 +412,51 @@ export const useCachedModelApi = () => {
     },
   };
 };
+
+/**
+ * 将后端API返回的模型数据转换为前端格式
+ */
+function transformApiModelToFrontend(apiModel: unknown): ModelInfo {
+  // 类型断言为可索引对象
+  const model = apiModel as Record<string, unknown>;
+
+  // 模型类型映射
+  const modelTypeMapping: Record<string, 'technical' | 'machine_learning' | 'fundamental'> = {
+    'technical': 'technical',
+    'ml': 'machine_learning',
+    'machine_learning': 'machine_learning',
+    'fundamental': 'fundamental'
+  };
+
+  // 转换主要字段
+  const frontendModel: ModelInfo = {
+    modelId: String(model.id || model.modelId || ''),
+    name: String(model.name || ''),
+    description: model.description ? String(model.description) : undefined,
+    modelType: modelTypeMapping[String(model.model_type || model.modelType)] || 'technical',
+    parameters: (model.parameters as Record<string, unknown>) || {},
+    weight: typeof model.weight === 'string' ? parseFloat(model.weight) : (Number(model.weight) || 0),
+    isActive: model.is_active !== undefined ? Boolean(model.is_active) : Boolean(model.isActive),
+    performanceScore: typeof model.performance_score === 'string' ? parseFloat(model.performance_score) : (Number(model.performance_score) || 0),
+    createdAt: model.created_at ? String(model.created_at) : undefined,
+    updatedAt: model.updated_at ? String(model.updated_at) : undefined,
+  };
+
+  // 转换性能指标
+  const performanceMetrics = model.performance_metrics || model.performanceMetrics;
+  if (performanceMetrics && typeof performanceMetrics === 'object') {
+    const metrics = performanceMetrics as Record<string, unknown>;
+    frontendModel.performanceMetrics = {
+      accuracy: typeof metrics.win_rate === 'string' ? parseFloat(metrics.win_rate) : (Number(metrics.win_rate) || 0),
+      totalReturn: typeof metrics.total_return === 'string' ? parseFloat(metrics.total_return) : (Number(metrics.total_return) || 0),
+      sharpeRatio: typeof metrics.sharpe_ratio === 'string' ? parseFloat(metrics.sharpe_ratio) : (Number(metrics.sharpe_ratio) || 0),
+      maxDrawdown: typeof metrics.max_drawdown === 'string' ? parseFloat(metrics.max_drawdown) : (Number(metrics.max_drawdown) || 0),
+      winRate: typeof metrics.win_rate === 'string' ? parseFloat(metrics.win_rate) : (Number(metrics.win_rate) || 0),
+    };
+  }
+
+  return frontendModel;
+}
 
 /**
  * 组合API和错误处理的工具函数

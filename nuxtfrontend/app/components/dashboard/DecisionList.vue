@@ -109,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useDashboardData } from '~/composables/useDashboardData';
 
 interface DashboardDecision {
@@ -120,8 +120,21 @@ interface DashboardDecision {
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
-const { realTimeDecisions, loading, lastUpdated, hasHighRiskDecisions, refreshDashboard } =
-  useDashboardData();
+const {
+  realTimeDecisions,
+  loading,
+  lastUpdated,
+  hasHighRiskDecisions,
+  refreshDashboard,
+  loadRealTimeDecisions,
+} = useDashboardData();
+
+// 组件挂载时加载实时决策数据
+onMounted(async () => {
+  if (realTimeDecisions.value.length === 0 && !loading.value) {
+    await loadRealTimeDecisions();
+  }
+});
 
 // 计算属性
 const decisions = computed(() => realTimeDecisions.value.slice(0, 8)); // 最多显示8条

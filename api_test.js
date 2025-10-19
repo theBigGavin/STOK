@@ -24,13 +24,13 @@ const testResults = {
 // 测试工具函数
 function logTest(description, status, response = null, error = null) {
   testResults.total++;
-  
+
   const result = {
     description,
     status,
     timestamp: new Date().toISOString()
   };
-  
+
   if (response) {
     result.response = {
       status: response.status,
@@ -38,13 +38,13 @@ function logTest(description, status, response = null, error = null) {
       data: response.data
     };
   }
-  
+
   if (error) {
     result.error = error.message || error;
   }
-  
+
   testResults.details.push(result);
-  
+
   if (status === 'PASSED') {
     testResults.passed++;
     console.log(`✅ ${description}`);
@@ -58,16 +58,16 @@ function logTest(description, status, response = null, error = null) {
 }
 
 function validateResponse(response, expectedStatus = 200) {
-  return response.status === expectedStatus && 
-         response.data && 
-         response.data.status === 'success';
+  return response.status === expectedStatus &&
+    response.data &&
+    response.data.status === 'success';
 }
 
 // 测试函数
 async function testHealthCheck() {
   try {
     console.log('\n🔍 测试健康检查API...');
-    
+
     // 测试 /health
     const healthResponse = await api.get('/health');
     if (validateResponse(healthResponse)) {
@@ -75,7 +75,7 @@ async function testHealthCheck() {
     } else {
       logTest('GET /health - 健康检查', 'FAILED', healthResponse);
     }
-    
+
     // 测试 /health/database
     const dbHealthResponse = await api.get('/health/database');
     if (validateResponse(dbHealthResponse)) {
@@ -83,7 +83,7 @@ async function testHealthCheck() {
     } else {
       logTest('GET /health/database - 数据库健康检查', 'FAILED', dbHealthResponse);
     }
-    
+
     // 测试 /health/redis
     const redisHealthResponse = await api.get('/health/redis');
     if (validateResponse(redisHealthResponse)) {
@@ -91,7 +91,7 @@ async function testHealthCheck() {
     } else {
       logTest('GET /health/redis - Redis健康检查', 'FAILED', redisHealthResponse);
     }
-    
+
     // 测试 /metrics
     const metricsResponse = await api.get('/metrics');
     if (validateResponse(metricsResponse)) {
@@ -99,7 +99,7 @@ async function testHealthCheck() {
     } else {
       logTest('GET /metrics - 系统指标', 'FAILED', metricsResponse);
     }
-    
+
   } catch (error) {
     logTest('健康检查API测试', 'FAILED', null, error);
   }
@@ -108,7 +108,7 @@ async function testHealthCheck() {
 async function testStockAPIs() {
   try {
     console.log('\n📈 测试股票数据API...');
-    
+
     // 测试 GET /stocks
     const stocksResponse = await api.get('/stocks', {
       params: { limit: 10, skip: 0 }
@@ -118,7 +118,7 @@ async function testStockAPIs() {
     } else {
       logTest('GET /stocks - 获取股票列表', 'FAILED', stocksResponse);
     }
-    
+
     // 测试无效股票代码
     try {
       await api.get('/stocks/INVALID_SYMBOL');
@@ -130,7 +130,7 @@ async function testStockAPIs() {
         logTest('GET /stocks/{invalid_symbol} - 无效股票代码错误处理', 'FAILED', null, error);
       }
     }
-    
+
     // 测试股票历史数据（需要有效股票代码）
     try {
       const stockDataResponse = await api.get('/stocks/000001/data', {
@@ -151,7 +151,7 @@ async function testStockAPIs() {
         logTest('GET /stocks/{symbol}/data - 股票历史数据', 'FAILED', null, error);
       }
     }
-    
+
   } catch (error) {
     logTest('股票数据API测试', 'FAILED', null, error);
   }
@@ -160,7 +160,7 @@ async function testStockAPIs() {
 async function testModelAPIs() {
   try {
     console.log('\n🤖 测试模型管理API...');
-    
+
     // 测试 GET /models
     const modelsResponse = await api.get('/models', {
       params: { limit: 5, skip: 0 }
@@ -170,7 +170,7 @@ async function testModelAPIs() {
     } else {
       logTest('GET /models - 获取模型列表', 'FAILED', modelsResponse);
     }
-    
+
     // 测试无效模型ID
     try {
       await api.get('/models/99999');
@@ -182,7 +182,7 @@ async function testModelAPIs() {
         logTest('GET /models/{invalid_id} - 无效模型ID错误处理', 'FAILED', null, error);
       }
     }
-    
+
   } catch (error) {
     logTest('模型管理API测试', 'FAILED', null, error);
   }
@@ -191,7 +191,7 @@ async function testModelAPIs() {
 async function testDecisionAPIs() {
   try {
     console.log('\n🎯 测试决策引擎API...');
-    
+
     // 测试 GET /decisions
     const decisionsResponse = await api.get('/decisions', {
       params: { limit: 5, skip: 0 }
@@ -201,7 +201,7 @@ async function testDecisionAPIs() {
     } else {
       logTest('GET /decisions - 获取决策列表', 'FAILED', decisionsResponse);
     }
-    
+
     // 测试无效决策ID
     try {
       await api.get('/decisions/99999');
@@ -213,28 +213,23 @@ async function testDecisionAPIs() {
         logTest('GET /decisions/{invalid_id} - 无效决策ID错误处理', 'FAILED', null, error);
       }
     }
-    
-    // 测试生成决策（需要有效数据）
+
+    // 测试刷新决策（需要有效数据）
     try {
-      const decisionRequest = {
-        symbol: "000001",
-        trade_date: "2024-01-15",
-        current_position: 0.0
-      };
-      const generateResponse = await api.post('/decisions/generate', decisionRequest);
-      if (validateResponse(generateResponse)) {
-        logTest('POST /decisions/generate - 生成决策', 'PASSED', generateResponse);
+      const refreshResponse = await api.post('/decisions/refresh');
+      if (validateResponse(refreshResponse)) {
+        logTest('POST /decisions/refresh - 刷新决策', 'PASSED', refreshResponse);
       } else {
-        logTest('POST /decisions/generate - 生成决策', 'FAILED', generateResponse);
+        logTest('POST /decisions/refresh - 刷新决策', 'FAILED', refreshResponse);
       }
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        logTest('POST /decisions/generate - 生成决策（无数据）', 'PASSED');
+        logTest('POST /decisions/refresh - 刷新决策（无数据）', 'PASSED');
       } else {
-        logTest('POST /decisions/generate - 生成决策', 'FAILED', null, error);
+        logTest('POST /decisions/refresh - 刷新决策', 'FAILED', null, error);
       }
     }
-    
+
   } catch (error) {
     logTest('决策引擎API测试', 'FAILED', null, error);
   }
@@ -243,7 +238,7 @@ async function testDecisionAPIs() {
 async function testBacktestAPIs() {
   try {
     console.log('\n📊 测试回测功能API...');
-    
+
     // 测试回测请求
     try {
       const backtestRequest = {
@@ -266,7 +261,7 @@ async function testBacktestAPIs() {
         logTest('POST /backtest/run - 运行回测', 'FAILED', null, error);
       }
     }
-    
+
   } catch (error) {
     logTest('回测功能API测试', 'FAILED', null, error);
   }
@@ -275,7 +270,7 @@ async function testBacktestAPIs() {
 async function testErrorHandling() {
   try {
     console.log('\n🛡️ 测试错误处理...');
-    
+
     // 测试无效端点
     try {
       await api.get('/invalid-endpoint');
@@ -287,7 +282,7 @@ async function testErrorHandling() {
         logTest('GET /invalid-endpoint - 无效端点错误处理', 'FAILED', null, error);
       }
     }
-    
+
     // 测试无效参数
     try {
       await api.get('/stocks', { params: { limit: -1 } });
@@ -299,7 +294,7 @@ async function testErrorHandling() {
         logTest('GET /stocks with invalid limit - 无效参数错误处理', 'FAILED', null, error);
       }
     }
-    
+
   } catch (error) {
     logTest('错误处理测试', 'FAILED', null, error);
   }
@@ -310,13 +305,13 @@ function generateReport() {
   console.log('\n' + '='.repeat(60));
   console.log('📋 STOK后端API测试报告');
   console.log('='.repeat(60));
-  
+
   console.log(`\n测试统计:`);
   console.log(`✅ 通过: ${testResults.passed}`);
   console.log(`❌ 失败: ${testResults.failed}`);
   console.log(`📊 总计: ${testResults.total}`);
   console.log(`🎯 成功率: ${((testResults.passed / testResults.total) * 100).toFixed(2)}%`);
-  
+
   console.log(`\n详细结果:`);
   testResults.details.forEach((test, index) => {
     const statusIcon = test.status === 'PASSED' ? '✅' : '❌';
@@ -328,15 +323,15 @@ function generateReport() {
       console.log(`   响应状态: ${test.response.status} ${test.response.statusText}`);
     }
   });
-  
+
   // 问题和建议
   const issues = [];
   const suggestions = [];
-  
+
   if (testResults.failed > 0) {
     issues.push(`有 ${testResults.failed} 个测试用例失败`);
   }
-  
+
   const failedTests = testResults.details.filter(test => test.status === 'FAILED');
   failedTests.forEach(test => {
     if (test.description.includes('无数据')) {
@@ -349,17 +344,17 @@ function generateReport() {
       issues.push('后端服务连接失败，请确保服务正在运行在localhost:8099');
     }
   });
-  
+
   if (issues.length > 0) {
     console.log(`\n⚠️ 发现的问题:`);
     issues.forEach(issue => console.log(`   • ${issue}`));
   }
-  
+
   if (suggestions.length > 0) {
     console.log(`\n💡 改进建议:`);
     suggestions.forEach(suggestion => console.log(`   • ${suggestion}`));
   }
-  
+
   console.log('\n' + '='.repeat(60));
 }
 
@@ -369,7 +364,7 @@ async function runAllTests() {
   console.log(`目标服务: ${BASE_URL}`);
   console.log(`测试时间: ${new Date().toLocaleString()}`);
   console.log('='.repeat(60));
-  
+
   try {
     // 执行所有测试
     await testHealthCheck();
@@ -378,13 +373,13 @@ async function runAllTests() {
     await testDecisionAPIs();
     await testBacktestAPIs();
     await testErrorHandling();
-    
+
     // 生成报告
     generateReport();
-    
+
     // 返回测试结果
     return testResults.passed === testResults.total;
-    
+
   } catch (error) {
     console.error('测试执行过程中发生错误:', error);
     generateReport();

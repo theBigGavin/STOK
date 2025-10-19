@@ -445,6 +445,61 @@ export const useDecisionStore = defineStore('decisions', () => {
     },
 
     /**
+     * 获取最近决策列表
+     */
+    async fetchRecentDecisions(limit: number = 10, skip: number = 0) {
+      state.loading = true;
+      state.error = null;
+
+      try {
+        const recentDecisions = await decisionApi.getRecentDecisions(limit, skip);
+
+        // 转换API响应数据格式为前端期望的格式
+        const formattedDecisions = recentDecisions.map(decision => ({
+          symbol: decision.symbol,
+          decision: decision.decision.toUpperCase() as 'BUY' | 'SELL' | 'HOLD',
+          confidence: decision.confidence * 100, // 转换为百分比
+          timestamp: decision.timestamp,
+          riskLevel: decision.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH'
+        }));
+
+        // 将最近决策添加到store中
+        formattedDecisions.forEach(decision => {
+          // 转换为DecisionResult格式并添加到decisions数组
+          const decisionResult: DecisionResult = {
+            symbol: decision.symbol,
+            tradeDate: new Date(decision.timestamp).toISOString().split('T')[0], // 从timestamp中提取日期
+            timestamp: decision.timestamp,
+            finalDecision: {
+              decision: decision.decision,
+              confidence: decision.confidence
+            },
+            riskAssessment: {
+              riskLevel: decision.riskLevel
+            }
+          };
+
+          // 检查是否已存在相同的决策
+          const existingIndex = state.decisions.findIndex(
+            d => d.symbol === decision.symbol && d.timestamp === decision.timestamp
+          );
+          if (existingIndex === -1) {
+            state.decisions.unshift(decisionResult);
+          } else {
+            state.decisions[existingIndex] = decisionResult;
+          }
+        });
+
+        return formattedDecisions;
+      } catch (error) {
+        state.error = handleApiError(error).message;
+        throw error;
+      } finally {
+        state.loading = false;
+      }
+    },
+
+    /**
      * 重新计算决策
      */
     async recalculateDecision(

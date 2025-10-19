@@ -4,20 +4,25 @@
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, List
+import uuid
 from decimal import Decimal
 
 from src.ml_models.base import BaseBacktestModel
-from src.models.stock_models import DecisionType
+from src.models.stock_models import DecisionType, ModelType
 
 
 class MovingAverageCrossover(BaseBacktestModel):
     """移动平均线交叉模型"""
 
-    def __init__(self, short_window: int = 5, long_window: int = 20):
-        super().__init__()
+    def __init__(self, model_id: uuid.UUID, name: str = "移动平均线交叉模型", model_type: ModelType = ModelType.TECHNICAL, short_window: int = 5, long_window: int = 20):
+        super().__init__(model_id, name, model_type, "基于移动平均线交叉的交易信号模型")
         self.short_window = short_window
         self.long_window = long_window
+        self.parameters = {
+            'short_window': short_window,
+            'long_window': long_window
+        }
 
     def generate_signal(self, data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """生成交易信号"""
@@ -78,15 +83,28 @@ class MovingAverageCrossover(BaseBacktestModel):
                 'reasoning': "移动平均线无交叉信号"
             }
 
+    def validate_parameters(self) -> bool:
+        """验证模型参数"""
+        return (
+            self.short_window > 0 and
+            self.long_window > 0 and
+            self.short_window < self.long_window
+        )
+
 
 class RSIModel(BaseBacktestModel):
     """RSI模型"""
 
-    def __init__(self, period: int = 14, overbought: int = 70, oversold: int = 30):
-        super().__init__()
+    def __init__(self, model_id: uuid.UUID, name: str = "RSI模型", model_type: ModelType = ModelType.TECHNICAL, period: int = 14, overbought: int = 70, oversold: int = 30):
+        super().__init__(model_id, name, model_type, "基于相对强弱指标(RSI)的交易信号模型")
         self.period = period
         self.overbought = overbought
         self.oversold = oversold
+        self.parameters = {
+            'period': period,
+            'overbought': overbought,
+            'oversold': oversold
+        }
 
     def _calculate_rsi(self, df: pd.DataFrame) -> pd.Series:
         """计算RSI指标"""
@@ -157,29 +175,30 @@ class RSIModel(BaseBacktestModel):
                 'target_price': Decimal(str(current_price * 0.92)),  # 目标价格：下跌8%
                 'stop_loss_price': Decimal(str(current_price * 1.08))  # 止损价格：上涨8%
             }
-        else:
-            # 正常区间 - 观望
-            distance_to_oversold = abs(current_rsi - self.oversold) / self.oversold
-            distance_to_overbought = abs(current_rsi - self.overbought) / (100 - self.overbought)
-            min_distance = min(distance_to_oversold, distance_to_overbought)
-            confidence = max(0.4, 1.0 - min_distance)
-            
-            return {
-                'decision': DecisionType.HOLD,
-                'confidence': Decimal(str(confidence)),
-                'signal_strength': Decimal('0.4'),
-                'reasoning': f"RSI正常区间 (当前:{current_rsi:.1f})"
-            }
+
+    def validate_parameters(self) -> bool:
+        """验证模型参数"""
+        return (
+            self.period > 0 and
+            self.overbought > 0 and
+            self.oversold > 0 and
+            self.oversold < self.overbought
+        )
 
 
 class MACDModel(BaseBacktestModel):
     """MACD模型"""
 
-    def __init__(self, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9):
-        super().__init__()
+    def __init__(self, model_id: uuid.UUID, name: str = "MACD模型", model_type: ModelType = ModelType.TECHNICAL, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9):
+        super().__init__(model_id, name, model_type, "基于MACD指标的交易信号模型")
         self.fast_period = fast_period
         self.slow_period = slow_period
         self.signal_period = signal_period
+        self.parameters = {
+            'fast_period': fast_period,
+            'slow_period': slow_period,
+            'signal_period': signal_period
+        }
 
     def _calculate_macd(self, df: pd.DataFrame) -> tuple:
         """计算MACD指标"""
@@ -244,26 +263,20 @@ class MACDModel(BaseBacktestModel):
                 'target_price': Decimal(str(current_price * 0.94)),  # 目标价格：下跌6%
                 'stop_loss_price': Decimal(str(current_price * 1.06))  # 止损价格：上涨6%
             }
-        else:
-            # 无交叉 - 观望
-            distance = abs(current_macd - current_signal)
-            confidence = max(0.4, 1.0 - distance * 10)
-            
-            return {
-                'decision': DecisionType.HOLD,
-                'confidence': Decimal(str(confidence)),
-                'signal_strength': Decimal('0.3'),
-                'reasoning': f"MACD无交叉信号 (MACD:{current_macd:.3f}, 信号:{current_signal:.3f})"
-            }
+
 
 
 class BollingerBandsModel(BaseBacktestModel):
     """布林带模型"""
 
-    def __init__(self, period: int = 20, std_dev: int = 2):
-        super().__init__()
+    def __init__(self, model_id: uuid.UUID, name: str = "布林带模型", model_type: ModelType = ModelType.TECHNICAL, period: int = 20, std_dev: int = 2):
+        super().__init__(model_id, name, model_type, "基于布林带指标的交易信号模型")
         self.period = period
         self.std_dev = std_dev
+        self.parameters = {
+            'period': period,
+            'std_dev': std_dev
+        }
 
     def _calculate_bollinger_bands(self, df: pd.DataFrame) -> tuple:
         """计算布林带"""
@@ -309,28 +322,4 @@ class BollingerBandsModel(BaseBacktestModel):
                 'reasoning': f"价格触及布林带下轨 (价格:{current_price:.2f}, 下轨:{current_lower:.2f})",
                 'target_price': Decimal(str(middle_band.iloc[-1])),  # 目标价格：中轨
                 'stop_loss_price': Decimal(str(current_lower * 0.98))  # 止损价格：下轨下方2%
-            }
-        elif current_price >= current_upper:
-            # 价格触及上轨 - 卖出信号
-            signal_strength = min((current_price - current_upper) / current_upper * 20, 1.0)
-            return {
-                'decision': DecisionType.SELL,
-                'confidence': Decimal('0.75'),
-                'signal_strength': Decimal(str(signal_strength)),
-                'reasoning': f"价格触及布林带上轨 (价格:{current_price:.2f}, 上轨:{current_upper:.2f})",
-                'target_price': Decimal(str(middle_band.iloc[-1])),  # 目标价格：中轨
-                'stop_loss_price': Decimal(str(current_upper * 1.02))  # 止损价格：上轨上方2%
-            }
-        else:
-            # 价格在通道内 - 观望
-            distance_to_upper = (current_upper - current_price) / current_price
-            distance_to_lower = (current_price - current_lower) / current_price
-            min_distance = min(distance_to_upper, distance_to_lower)
-            confidence = max(0.4, 1.0 - min_distance * 5)
-            
-            return {
-                'decision': DecisionType.HOLD,
-                'confidence': Decimal(str(confidence)),
-                'signal_strength': Decimal('0.3'),
-                'reasoning': f"价格在布林带通道内 (价格:{current_price:.2f})"
             }

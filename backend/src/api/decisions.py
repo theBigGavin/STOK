@@ -21,6 +21,48 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@router.get("/decisions", response_model=APIResponse)
+async def get_decisions_summary(
+    session: AsyncSession = Depends(get_db_session)
+):
+    """获取决策引擎摘要信息"""
+    try:
+        # 获取基本统计信息
+        stock_service = StockService(session)
+        stock_stats = await stock_service.get_stock_statistics()
+        
+        # 获取决策统计
+        decision_stats_result = await session.execute(
+            select(Decision)
+        )
+        decisions = decision_stats_result.scalars().all()
+        
+        # 获取模型统计
+        model_stats_result = await session.execute(
+            select(AIModel)
+        )
+        models = model_stats_result.scalars().all()
+        
+        summary = {
+            "engine_status": "active",
+            "total_stocks": stock_stats.get("total_stocks", 0),
+            "total_decisions": len(decisions),
+            "total_models": len(models),
+            "active_models": len([m for m in models if m.is_active]),
+            "last_updated": datetime.now().isoformat()
+        }
+        
+        return APIResponse(
+            data=summary,
+            message="决策引擎运行正常",
+            status="success"
+        )
+        
+    except Exception as e:
+        logger.error(f"获取决策引擎摘要失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"获取决策引擎摘要失败: {str(e)}")
+
+
 @router.get("/decisions/recommendations", response_model=APIResponse)
 async def get_recommendations(
     limit: int = Query(10, ge=1, le=100, description="推荐数量限制"),

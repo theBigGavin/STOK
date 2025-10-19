@@ -9,10 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
 from src.config.database import get_db_session
-from src.models.database import Stock, StockDailyData
+from src.models.database import Stock, StockPrice
 from src.models.stock_models import (
-    StockResponse, StockCreate, StockUpdate, StockDailyDataResponse,
-    StockDailyDataCreate, StockDailyDataUpdate, APIResponse, PaginatedResponse
+    StockResponse, StockCreate, StockUpdate, StockPriceResponse,
+    StockPriceCreate, StockPriceUpdate, APIResponse, PaginatedResponse
 )
 
 router = APIRouter()
@@ -22,15 +22,16 @@ router = APIRouter()
 async def get_stocks(
     skip: int = Query(0, ge=0, description="跳过记录数"),
     limit: int = Query(100, ge=1, le=1000, description="返回记录数"),
-    active_only: bool = Query(True, description="只返回活跃股票"),
+    active_only: bool = Query(False, description="只返回活跃股票"),
     market: Optional[str] = Query(None, description="市场类型过滤")
 ):
     """获取股票列表"""
     async with get_db_session() as session:
         # 构建查询条件
         conditions = []
-        if active_only:
-            conditions.append(Stock.is_active == True)
+        # 注意：Stock 模型中没有 is_active 字段，暂时注释掉
+        # if active_only:
+        #     conditions.append(Stock.is_active == True)
         if market:
             conditions.append(Stock.market == market)
         
@@ -50,9 +51,39 @@ async def get_stocks(
         result = await session.execute(query)
         stocks = result.scalars().all()
         
+        # 手动构建响应数据，处理市场类型映射
+        stock_responses = []
+        for stock in stocks:
+            # 将数据库中的市场代码映射为Pydantic期望的市场类型
+            market_mapping = {
+                'SZ': 'A股',
+                'SH': 'A股',
+                'HK': '港股',
+                'US': '美股'
+            }
+            market_value = market_mapping.get(stock.market, 'A股')
+            
+            stock_responses.append(StockResponse(
+                id=stock.id,
+                symbol=stock.symbol,
+                name=stock.name,
+                industry=stock.industry,
+                market=market_value,
+                current_price=stock.current_price,
+                price_change=stock.price_change,
+                price_change_percent=stock.price_change_percent,
+                volume=stock.volume,
+                market_cap=stock.market_cap,
+                pe_ratio=stock.pe_ratio,
+                pb_ratio=stock.pb_ratio,
+                dividend_yield=stock.dividend_yield,
+                created_at=stock.created_at,
+                updated_at=stock.updated_at
+            ))
+        
         return APIResponse(
             data=PaginatedResponse(
-                data=[StockResponse.model_validate(stock) for stock in stocks],
+                data=stock_responses,
                 total=total,
                 skip=skip,
                 limit=limit
@@ -77,8 +108,35 @@ async def get_stock(
             if not stock:
                 raise HTTPException(status_code=404, detail=f"股票 {symbol} 不存在")
             
+            # 手动构建响应数据，处理市场类型映射
+            market_mapping = {
+                'SZ': 'A股',
+                'SH': 'A股',
+                'HK': '港股',
+                'US': '美股'
+            }
+            market_value = market_mapping.get(stock.market, 'A股')
+            
+            stock_response = StockResponse(
+                id=stock.id,
+                symbol=stock.symbol,
+                name=stock.name,
+                industry=stock.industry,
+                market=market_value,
+                current_price=stock.current_price,
+                price_change=stock.price_change,
+                price_change_percent=stock.price_change_percent,
+                volume=stock.volume,
+                market_cap=stock.market_cap,
+                pe_ratio=stock.pe_ratio,
+                pb_ratio=stock.pb_ratio,
+                dividend_yield=stock.dividend_yield,
+                created_at=stock.created_at,
+                updated_at=stock.updated_at
+            )
+            
             return APIResponse(
-                data=StockResponse.model_validate(stock),
+                data=stock_response,
                 message="获取股票详情成功",
                 status="success"
             )
@@ -196,12 +254,12 @@ async def get_stock_data(
             
             # 查询历史数据总数
             count_result = await session.execute(
-                select(StockDailyData.id)
+                select(StockPrice.id)
                 .where(
                     and_(
-                        StockDailyData.stock_id == stock.id,
-                        StockDailyData.trade_date >= start_date,
-                        StockDailyData.trade_date <= end_date
+                        StockPrice.stock_id == stock.id,
+                        StockPrice.date >= start_date,
+                        StockPrice.date <= end_date
                     )
                 )
             )
@@ -209,22 +267,22 @@ async def get_stock_data(
             
             # 查询分页数据
             result = await session.execute(
-                select(StockDailyData)
+                select(StockPrice)
                 .where(
                     and_(
-                        StockDailyData.stock_id == stock.id,
-                        StockDailyData.trade_date >= start_date,
-                        StockDailyData.trade_date <= end_date
+                        StockPrice.stock_id == stock.id,
+                        StockPrice.date >= start_date,
+                        StockPrice.date <= end_date
                     )
                 )
-                .order_by(StockDailyData.trade_date.desc())
+                .order_by(StockPrice.date.desc())
                 .offset(skip)
                 .limit(limit)
             )
             daily_data = result.scalars().all()
             
             # 构建响应数据
-            data_list = [StockDailyDataResponse.model_validate(data) for data in daily_data]
+            data_list = [StockPriceResponse.model_validate(data) for data in daily_data]
             
             return APIResponse(
                 data={
@@ -268,9 +326,9 @@ async def get_latest_stock_data(
         
         # 查询最新数据
         result = await session.execute(
-            select(StockDailyData)
-            .where(StockDailyData.stock_id == stock.id)
-            .order_by(StockDailyData.trade_date.desc())
+            select(StockPrice)
+            .where(StockPrice.stock_id == stock.id)
+            .order_by(StockPrice.date.desc())
             .limit(1)
         )
         latest_data = result.scalar_one_or_none()
@@ -281,7 +339,7 @@ async def get_latest_stock_data(
         return APIResponse(
             data={
                 "symbol": symbol,
-                "latest_data": StockDailyDataResponse.model_validate(latest_data),
+                "latest_data": StockPriceResponse.model_validate(latest_data),
                 "timestamp": latest_data.created_at
             },
             message="获取最新数据成功",
@@ -307,9 +365,9 @@ async def refresh_stock_data(
             
             # 获取最新的交易日期
             latest_date_result = await session.execute(
-                select(StockDailyData.trade_date)
-                .where(StockDailyData.stock_id == stock.id)
-                .order_by(StockDailyData.trade_date.desc())
+                select(StockPrice.date)
+                .where(StockPrice.stock_id == stock.id)
+                .order_by(StockPrice.date.desc())
                 .limit(1)
             )
             latest_date = latest_date_result.scalar_one_or_none()
@@ -334,11 +392,11 @@ async def refresh_stock_data(
             for data_item in new_data:
                 # 检查数据是否已存在
                 existing_result = await session.execute(
-                    select(StockDailyData)
+                    select(StockPrice)
                     .where(
                         and_(
-                            StockDailyData.stock_id == stock.id,
-                            StockDailyData.trade_date == data_item["trade_date"]
+                            StockPrice.stock_id == stock.id,
+                            StockPrice.date == data_item["date"]
                         )
                     )
                 )
@@ -346,15 +404,15 @@ async def refresh_stock_data(
                 
                 if not existing_data:
                     # 创建新数据记录
-                    daily_data = StockDailyData(
+                    daily_data = StockPrice(
                         stock_id=stock.id,
-                        trade_date=data_item["trade_date"],
+                        date=data_item["date"],
                         open_price=data_item["open_price"],
                         high_price=data_item["high_price"],
                         low_price=data_item["low_price"],
                         close_price=data_item["close_price"],
                         volume=data_item["volume"],
-                        turnover=data_item.get("turnover")
+                        adjusted_close=data_item.get("adjusted_close", data_item["close_price"])
                     )
                     session.add(daily_data)
                     updated_count += 1
@@ -421,13 +479,13 @@ async def _fetch_stock_data_from_external(symbol: str, latest_date: Optional[dat
         turnover = round(volume * close_price, 2)
         
         new_data.append({
-            "trade_date": current_date,
+            "date": current_date,
             "open_price": open_price,
             "high_price": high_price,
             "low_price": low_price,
             "close_price": close_price,
             "volume": volume,
-            "turnover": turnover
+            "adjusted_close": close_price
         })
         
         current_date += timedelta(days=1)
@@ -438,7 +496,7 @@ async def _fetch_stock_data_from_external(symbol: str, latest_date: Optional[dat
 @router.post("/stocks/{symbol}/data", response_model=APIResponse)
 async def create_stock_data(
     symbol: str,
-    data: StockDailyDataCreate
+    data: StockPriceCreate
 ):
     """创建股票日线数据"""
     async with get_db_session() as session:
@@ -453,11 +511,11 @@ async def create_stock_data(
         
         # 检查数据是否已存在
         result = await session.execute(
-            select(StockDailyData)
+            select(StockPrice)
             .where(
                 and_(
-                    StockDailyData.stock_id == stock.id,
-                    StockDailyData.trade_date == data.trade_date
+                    StockPrice.stock_id == stock.id,
+                    StockPrice.date == data.trade_date
                 )
             )
         )
@@ -470,16 +528,22 @@ async def create_stock_data(
             )
         
         # 创建新数据
-        daily_data = StockDailyData(
+        daily_data = StockPrice(
             stock_id=stock.id,
-            **data.model_dump(exclude={'symbol'})
+            date=data.trade_date,
+            open_price=data.open_price,
+            high_price=data.high_price,
+            low_price=data.low_price,
+            close_price=data.close_price,
+            volume=data.volume,
+            adjusted_close=data.adjusted_close
         )
         session.add(daily_data)
         await session.commit()
         await session.refresh(daily_data)
         
         return APIResponse(
-            data=StockDailyDataResponse.model_validate(daily_data),
+            data=StockPriceResponse.model_validate(daily_data),
             message="创建股票数据成功",
             status="success"
         )

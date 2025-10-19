@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel id="home">
     <template #header>
-      <UDashboardNavbar title="股票回测决策系统" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="股票 AI 策略回测决策系统" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui';
 
-const route = useRoute();
+// const route = useRoute();
 const toast = useToast();
 
 const open = ref(false);
@@ -9,7 +9,7 @@ const open = ref(false);
 const links = [
   [
     {
-      label: '仪表盘',
+      label: '驾驶舱',
       icon: 'i-lucide-chart-bar',
       to: '/',
       onSelect: () => {

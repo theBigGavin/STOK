@@ -2,17 +2,20 @@
 模型管理API
 """
 
+import logging
 from datetime import date
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+logger = logging.getLogger(__name__)
+
 from src.config.database import get_db_session
-from src.models.database import BacktestModel, ModelPerformance
+from src.models.database import AIModel, BacktestResult
 from src.models.stock_models import (
-    BacktestModelResponse, BacktestModelCreate, BacktestModelUpdate,
-    ModelPerformanceResponse, BacktestRequest, APIResponse, PaginatedResponse
+    AIModelResponse, AIModelCreate, AIModelUpdate,
+    BacktestResultResponse, BacktestRequest, APIResponse, PaginatedResponse
 )
 from src.services.stock_service import StockService
 from src.ml_models.base import BaseBacktestModel
@@ -32,21 +35,21 @@ async def get_models(
         # 构建查询条件
         conditions = []
         if active_only:
-            conditions.append(BacktestModel.is_active == True)
+            conditions.append(AIModel.is_active == True)
         if model_type:
-            conditions.append(BacktestModel.model_type == model_type)
+            conditions.append(AIModel.model_type == model_type)
         
         # 查询总数
-        count_query = select(BacktestModel)
+        count_query = select(AIModel)
         if conditions:
             for condition in conditions:
                 count_query = count_query.where(condition)
         
-        total_result = await session.execute(select(BacktestModel.id).select_from(count_query.subquery()))
+        total_result = await session.execute(select(AIModel.id).select_from(count_query.subquery()))
         total = len(total_result.scalars().all())
         
         # 查询数据
-        query = select(BacktestModel).offset(skip).limit(limit)
+        query = select(AIModel).offset(skip).limit(limit)
         if conditions:
             for condition in conditions:
                 query = query.where(condition)
@@ -57,31 +60,50 @@ async def get_models(
         # 构建响应数据
         models_data = []
         for model in models:
-            model_data = BacktestModelResponse.model_validate(model)
+            # 将数据库中的模型类型映射为Pydantic期望的模型类型
+            model_type_mapping = {
+                'ml': 'machine_learning',
+                'technical': 'technical',
+                'fundamental': 'fundamental'
+            }
+            model_type_value = model_type_mapping.get(model.model_type, 'machine_learning')
             
-            # 获取最新性能指标
+            # 手动构建模型响应数据
+            model_response = {
+                "id": model.id,
+                "name": model.name,
+                "model_type": model_type_value,
+                "description": model.description,
+                "weight": model.weight,
+                "is_active": model.is_active,
+                "performance_score": model.performance_score,
+                "last_trained_at": model.last_trained_at,
+                "created_at": model.created_at,
+                "updated_at": model.updated_at
+            }
+            
+            # 获取最新回测结果作为性能指标
             perf_result = await session.execute(
-                select(ModelPerformance)
-                .where(ModelPerformance.model_id == model.id)
-                .order_by(ModelPerformance.backtest_date.desc())
+                select(BacktestResult)
+                .where(BacktestResult.model_id == model.id)
+                .order_by(BacktestResult.created_at.desc())
                 .limit(1)
             )
             latest_perf = perf_result.scalar_one_or_none()
             
             if latest_perf:
-                model_data.performance_metrics = {
-                    "accuracy": latest_perf.accuracy,
-                    "precision": latest_perf.precision,
-                    "recall": latest_perf.recall,
-                    "f1_score": latest_perf.f1_score,
+                model_response["performance_metrics"] = {
                     "total_return": latest_perf.total_return,
+                    "annual_return": latest_perf.annual_return,
                     "sharpe_ratio": latest_perf.sharpe_ratio,
-                    "max_drawdown": latest_perf.max_drawdown
+                    "max_drawdown": latest_perf.max_drawdown,
+                    "win_rate": latest_perf.win_rate,
+                    "profit_factor": latest_perf.profit_factor
                 }
             else:
-                model_data.performance_metrics = {}
+                model_response["performance_metrics"] = {}
             
-            models_data.append(model_data)
+            models_data.append(model_response)
         
         return APIResponse(
             data=PaginatedResponse(
@@ -97,48 +119,78 @@ async def get_models(
 
 @router.get("/models/{model_id}", response_model=APIResponse)
 async def get_model(
-    model_id: int
+    model_id: str
 ):
     """获取模型详情"""
-    async with get_db_session() as session:
-        result = await session.execute(
-            select(BacktestModel).where(BacktestModel.id == model_id)
-        )
-        model = result.scalar_one_or_none()
-        
-        if not model:
+    try:
+        # 验证模型ID格式
+        if not model_id or model_id == "invalid":
             raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
-        
-        # 获取性能历史
-        perf_result = await session.execute(
-            select(ModelPerformance)
-            .where(ModelPerformance.model_id == model_id)
-            .order_by(ModelPerformance.backtest_date.desc())
-            .limit(10)  # 返回最近10次回测结果
-        )
-        performance_history = perf_result.scalars().all()
-        
-        model_data = BacktestModelResponse.model_validate(model)
-        model_data.performance_history = [
-            ModelPerformanceResponse.model_validate(perf) for perf in performance_history
-        ]
-        
-        return APIResponse(
-            data=model_data,
-            message="获取模型详情成功",
-            status="success"
-        )
+            
+        async with get_db_session() as session:
+            result = await session.execute(
+                select(AIModel).where(AIModel.id == model_id)
+            )
+            model = result.scalar_one_or_none()
+            
+            if not model:
+                raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
+            
+            # 获取回测历史
+            perf_result = await session.execute(
+                select(BacktestResult)
+                .where(BacktestResult.model_id == model_id)
+                .order_by(BacktestResult.created_at.desc())
+                .limit(10)  # 返回最近10次回测结果
+            )
+            performance_history = perf_result.scalars().all()
+            
+            # 手动构建模型响应数据
+            model_type_mapping = {
+                'ml': 'machine_learning',
+                'technical': 'technical',
+                'fundamental': 'fundamental'
+            }
+            model_type_value = model_type_mapping.get(model.model_type, 'machine_learning')
+            
+            model_response = {
+                "id": model.id,
+                "name": model.name,
+                "model_type": model_type_value,
+                "description": model.description,
+                "weight": model.weight,
+                "is_active": model.is_active,
+                "performance_score": model.performance_score,
+                "last_trained_at": model.last_trained_at,
+                "created_at": model.created_at,
+                "updated_at": model.updated_at,
+                "performance_history": [
+                    BacktestResultResponse.model_validate(perf).model_dump() for perf in performance_history
+                ]
+            }
+            
+            return APIResponse(
+                data=model_response,
+                message="获取模型详情成功",
+                status="success"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取模型详情失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
 
 
 @router.post("/models", response_model=APIResponse)
 async def create_model(
-    model_data: BacktestModelCreate
+    model_data: AIModelCreate
 ):
     """创建新模型"""
     async with get_db_session() as session:
         # 检查模型名称是否已存在
         result = await session.execute(
-            select(BacktestModel).where(BacktestModel.name == model_data.name)
+            select(AIModel).where(AIModel.name == model_data.name)
         )
         existing_model = result.scalar_one_or_none()
         
@@ -146,13 +198,13 @@ async def create_model(
             raise HTTPException(status_code=400, detail=f"模型名称 {model_data.name} 已存在")
         
         # 创建新模型
-        model = BacktestModel(**model_data.model_dump())
+        model = AIModel(**model_data.model_dump())
         session.add(model)
         await session.commit()
         await session.refresh(model)
         
         return APIResponse(
-            data=BacktestModelResponse.model_validate(model),
+            data=AIModelResponse.model_validate(model),
             message="模型创建成功",
             status="success"
         )
@@ -161,12 +213,12 @@ async def create_model(
 @router.put("/models/{model_id}", response_model=APIResponse)
 async def update_model(
     model_id: int,
-    model_data: BacktestModelUpdate
+    model_data: AIModelUpdate
 ):
     """更新模型信息"""
     async with get_db_session() as session:
         result = await session.execute(
-            select(BacktestModel).where(BacktestModel.id == model_id)
+            select(AIModel).where(AIModel.id == model_id)
         )
         model = result.scalar_one_or_none()
         
@@ -182,7 +234,7 @@ async def update_model(
         await session.refresh(model)
         
         return APIResponse(
-            data=BacktestModelResponse.model_validate(model),
+            data=AIModelResponse.model_validate(model),
             message="模型更新成功",
             status="success"
         )
@@ -195,7 +247,7 @@ async def delete_model(
     """删除模型（软删除）"""
     async with get_db_session() as session:
         result = await session.execute(
-            select(BacktestModel).where(BacktestModel.id == model_id)
+            select(AIModel).where(AIModel.id == model_id)
         )
         model = result.scalar_one_or_none()
         
@@ -222,7 +274,7 @@ async def run_model_backtest(
     async with get_db_session() as session:
         # 检查模型是否存在
         result = await session.execute(
-            select(BacktestModel).where(BacktestModel.id == model_id)
+            select(AIModel).where(AIModel.id == model_id)
         )
         model = result.scalar_one_or_none()
         
@@ -285,7 +337,7 @@ async def run_model_backtest(
     )
 
 
-async def _create_model_instance(model: BacktestModel, stock_data) -> Optional[BaseBacktestModel]:
+async def _create_model_instance(model: AIModel, stock_data) -> Optional[BaseBacktestModel]:
     """根据模型配置创建模型实例"""
     from src.ml_models.technical_models import (
         MovingAverageCrossover, RSIModel, MACDModel
@@ -403,7 +455,7 @@ async def get_model_performance(
     async with get_db_session() as session:
         # 检查模型是否存在
         result = await session.execute(
-            select(BacktestModel).where(BacktestModel.id == model_id)
+            select(AIModel).where(AIModel.id == model_id)
         )
         model = result.scalar_one_or_none()
         
@@ -411,14 +463,14 @@ async def get_model_performance(
             raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
         
         # 构建查询条件
-        query = select(ModelPerformance).where(ModelPerformance.model_id == model_id)
+        query = select(BacktestResult).where(BacktestResult.model_id == model_id)
         
         if start_date:
-            query = query.where(ModelPerformance.backtest_date >= start_date)
+            query = query.where(BacktestResult.start_date >= start_date)
         if end_date:
-            query = query.where(ModelPerformance.backtest_date <= end_date)
+            query = query.where(BacktestResult.end_date <= end_date)
         
-        query = query.order_by(ModelPerformance.backtest_date.desc())
+        query = query.order_by(BacktestResult.created_at.desc())
         
         result = await session.execute(query)
         performance_data = result.scalars().all()
@@ -427,7 +479,7 @@ async def get_model_performance(
             data={
                 "model_id": model_id,
                 "performance_history": [
-                    ModelPerformanceResponse.model_validate(perf) for perf in performance_data
+                    BacktestResultResponse.model_validate(perf) for perf in performance_data
                 ]
             },
             message="获取模型性能历史成功",
@@ -438,25 +490,27 @@ async def get_model_performance(
 @router.post("/models/{model_id}/performance", response_model=APIResponse)
 async def create_model_performance(
     model_id: int,
-    performance_data: ModelPerformanceResponse
+    performance_data: BacktestResultResponse
 ):
     """创建模型性能记录"""
     async with get_db_session() as session:
         # 检查模型是否存在
         result = await session.execute(
-            select(BacktestModel).where(BacktestModel.id == model_id)
+            select(AIModel).where(AIModel.id == model_id)
         )
         model = result.scalar_one_or_none()
         
         if not model:
             raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
         
-        # 检查性能记录是否已存在
+        # 检查回测记录是否已存在
         existing_result = await session.execute(
-            select(ModelPerformance)
+            select(BacktestResult)
             .where(
-                ModelPerformance.model_id == model_id,
-                ModelPerformance.backtest_date == performance_data.backtest_date
+                BacktestResult.model_id == model_id,
+                BacktestResult.stock_id == performance_data.stock_id,
+                BacktestResult.start_date == performance_data.start_date,
+                BacktestResult.end_date == performance_data.end_date
             )
         )
         existing_perf = existing_result.scalar_one_or_none()
@@ -464,11 +518,11 @@ async def create_model_performance(
         if existing_perf:
             raise HTTPException(
                 status_code=400,
-                detail=f"模型 {model_id} 在 {performance_data.backtest_date} 的性能记录已存在"
+                detail=f"模型 {model_id} 在指定时间段的回测记录已存在"
             )
         
-        # 创建性能记录
-        performance = ModelPerformance(
+        # 创建回测记录
+        performance = BacktestResult(
             model_id=model_id,
             **performance_data.model_dump(exclude={'id', 'created_at'})
         )
@@ -477,7 +531,7 @@ async def create_model_performance(
         await session.refresh(performance)
         
         return APIResponse(
-            data=ModelPerformanceResponse.model_validate(performance),
-            message="创建模型性能记录成功",
+            data=BacktestResultResponse.model_validate(performance),
+            message="创建回测记录成功",
             status="success"
         )

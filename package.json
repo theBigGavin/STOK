@@ -11,11 +11,15 @@
     "test:decisions": "node -e \"const { testDecisionAPIs } = require('./api_test'); testDecisionAPIs().then(() => process.exit(0));\"",
     "test:backtest": "node -e \"const { testBacktestAPIs } = require('./api_test'); testBacktestAPIs().then(() => process.exit(0));\""
   },
-  "keywords": ["api-test", "stok", "backend"],
+  "keywords": [
+    "api-test",
+    "stok",
+    "backend"
+  ],
   "author": "Roo",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.12.2"
   },
   "engines": {
     "node": ">=14.0.0"

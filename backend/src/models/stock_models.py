@@ -102,7 +102,7 @@ class StockResponse(StockBase):
 # 股票价格相关模型
 class StockPriceBase(BaseModel):
     """股票价格基础模型"""
-    date: date = Field(..., description="交易日期")
+    trade_date: date = Field(..., description="交易日期")
     open_price: Optional[Decimal] = Field(None, gt=0, description="开盘价")
     high_price: Optional[Decimal] = Field(None, gt=0, description="最高价")
     low_price: Optional[Decimal] = Field(None, gt=0, description="最低价")
@@ -114,6 +114,17 @@ class StockPriceBase(BaseModel):
 class StockPriceCreate(StockPriceBase):
     """股票价格创建模型"""
     stock_id: uuid.UUID = Field(..., description="股票ID")
+
+
+class StockPriceUpdate(BaseModel):
+    """股票价格更新模型"""
+    trade_date: Optional[date] = None
+    open_price: Optional[Decimal] = None
+    high_price: Optional[Decimal] = None
+    low_price: Optional[Decimal] = None
+    close_price: Optional[Decimal] = None
+    volume: Optional[int] = None
+    adjusted_close: Optional[Decimal] = None
 
 
 class StockPriceResponse(StockPriceBase):
@@ -293,3 +304,12 @@ class BacktestRequest(BaseModel):
     end_date: date = Field(..., description="结束日期")
     initial_capital: Decimal = Field(100000, gt=0, description="初始资金")
     model_ids: Optional[List[uuid.UUID]] = Field(None, description="模型ID列表")
+
+
+class PortfolioBacktestRequest(BaseModel):
+    """组合回测请求模型"""
+    symbols: List[str] = Field(..., min_items=1, description="股票代码列表")
+    start_date: date = Field(..., description="开始日期")
+    end_date: date = Field(..., description="结束日期")
+    initial_capital: Decimal = Field(100000, gt=0, description="初始资金")
+    rebalance_frequency: str = Field("monthly", description="重新平衡频率")

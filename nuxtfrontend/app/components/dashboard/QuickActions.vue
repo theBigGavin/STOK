@@ -7,7 +7,7 @@
       </div>
     </template>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- 生成决策 -->
       <div
         class="cursor-pointer hover:scale-105 transition-transform flex flex-col items-center justify-center p-6 text-center rounded-lg border border-default bg-elevated/50"
@@ -52,7 +52,7 @@
     <!-- 更多操作 -->
     <div class="mt-6 pt-6 border-t border-default">
       <h4 class="text-sm font-medium text-highlighted mb-4">更多操作</h4>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <UButton
           icon="i-lucide-chart-bar"
           color="neutral"
@@ -61,7 +61,7 @@
           class="justify-start"
           @click="viewAnalytics"
         >
-          查看分析报告
+          分析报告
         </UButton>
         <UButton
           icon="i-lucide-download"

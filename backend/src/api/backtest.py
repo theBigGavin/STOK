@@ -13,8 +13,8 @@ from src.models.stock_models import (
     BacktestRequest, PortfolioBacktestRequest, APIResponse
 )
 from src.models.database import (
-    Stock, StockDailyData, BacktestModel, ModelDecision,
-    FinalDecision, ModelPerformance
+    Stock, StockPrice, AIModel, Decision,
+    VoteResult, BacktestResult
 )
 from src.services.stock_service import StockService
 
@@ -51,20 +51,20 @@ async def run_model_backtest(
         # 获取模型决策数据
         model_conditions = []
         if model_ids:
-            model_conditions.append(ModelDecision.model_id.in_(model_ids))
+            model_conditions.append(Decision.id.in_(model_ids))
         
         model_decisions_result = await session.execute(
-            select(ModelDecision, BacktestModel)
-            .join(BacktestModel, ModelDecision.model_id == BacktestModel.id)
+            select(Decision, AIModel)
+            .join(AIModel, Decision.id == AIModel.id)
             .where(
                 and_(
-                    ModelDecision.stock_id == stock.id,
-                    ModelDecision.trade_date >= start_date,
-                    ModelDecision.trade_date <= end_date,
+                    Decision.stock_id == stock.id,
+                    Decision.generated_at >= start_date,
+                    Decision.generated_at <= end_date,
                     *model_conditions
                 )
             )
-            .order_by(ModelDecision.trade_date.asc())
+            .order_by(Decision.generated_at.asc())
         )
         model_decisions = model_decisions_result.all()
         
@@ -78,9 +78,9 @@ async def run_model_backtest(
             # 基于模型决策生成交易信号
             for decision, model in model_decisions:
                 signal_data = {
-                    "date": decision.trade_date.strftime("%Y-%m-%d"),
-                    "signal": decision.decision,
-                    "price": float(stock_data[stock_data['trade_date'] == decision.trade_date]['close_price'].iloc[0]) if not stock_data[stock_data['trade_date'] == decision.trade_date].empty else 0,
+                    "date": decision.generated_at.strftime("%Y-%m-%d"),
+                    "signal": decision.decision_type,
+                    "price": float(stock_data[stock_data['date'] == decision.generated_at]['close_price'].iloc[0]) if not stock_data[stock_data['date'] == decision.generated_at].empty else 0,
                     "model": model.name,
                     "confidence": float(decision.confidence) if decision.confidence else 0
                 }
@@ -88,16 +88,16 @@ async def run_model_backtest(
         
         # 获取模型性能数据作为回测结果
         performance_result = await session.execute(
-            select(ModelPerformance)
-            .join(BacktestModel, ModelPerformance.model_id == BacktestModel.id)
+            select(BacktestResult)
+            .join(AIModel, BacktestResult.model_id == AIModel.id)
             .where(
                 and_(
-                    BacktestModel.is_active == True,
-                    ModelPerformance.backtest_date >= start_date,
-                    ModelPerformance.backtest_date <= end_date
+                    AIModel.is_active == True,
+                    BacktestResult.start_date >= start_date,
+                    BacktestResult.end_date <= end_date
                 )
             )
-            .order_by(ModelPerformance.backtest_date.desc())
+            .order_by(BacktestResult.created_at.desc())
             .limit(1)
         )
         latest_performance = performance_result.scalar_one_or_none()
@@ -105,12 +105,12 @@ async def run_model_backtest(
         if latest_performance:
             backtest_result = {
                 "total_return": float(latest_performance.total_return) if latest_performance.total_return else 0.156,
-                "annual_return": 0.234,  # 需要计算
+                "annual_return": float(latest_performance.annual_return) if latest_performance.annual_return else 0.234,
                 "volatility": 0.245,     # 需要计算
                 "sharpe_ratio": float(latest_performance.sharpe_ratio) if latest_performance.sharpe_ratio else 0.956,
                 "max_drawdown": float(latest_performance.max_drawdown) if latest_performance.max_drawdown else 0.124,
-                "win_rate": float(latest_performance.accuracy) if latest_performance.accuracy else 0.65,
-                "profit_factor": 1.45,   # 需要计算
+                "win_rate": float(latest_performance.win_rate) if latest_performance.win_rate else 0.65,
+                "profit_factor": float(latest_performance.profit_factor) if latest_performance.profit_factor else 1.45,
                 "total_trades": len(signals),
                 "winning_trades": len([s for s in signals if s.get('profit', 0) > 0]),
                 "losing_trades": len([s for s in signals if s.get('profit', 0) < 0]),
@@ -336,20 +336,20 @@ async def compare_backtest_results(
             # 获取模型性能数据
             model_conditions = []
             if model_ids:
-                model_conditions.append(ModelPerformance.model_id.in_(model_ids))
+                model_conditions.append(BacktestResult.model_id.in_(model_ids))
             
             performance_result = await session.execute(
-                select(ModelPerformance)
-                .join(BacktestModel, ModelPerformance.model_id == BacktestModel.id)
+                select(BacktestResult)
+                .join(AIModel, BacktestResult.model_id == AIModel.id)
                 .where(
                     and_(
-                        BacktestModel.is_active == True,
-                        ModelPerformance.backtest_date >= start_date,
-                        ModelPerformance.backtest_date <= end_date,
+                        AIModel.is_active == True,
+                        BacktestResult.start_date >= start_date,
+                        BacktestResult.end_date <= end_date,
                         *model_conditions
                     )
                 )
-                .order_by(ModelPerformance.backtest_date.desc())
+                .order_by(BacktestResult.created_at.desc())
                 .limit(1)
             )
             latest_performance = performance_result.scalar_one_or_none()
@@ -357,11 +357,11 @@ async def compare_backtest_results(
             if latest_performance:
                 results = {
                     "total_return": float(latest_performance.total_return) if latest_performance.total_return else 0.0,
-                    "annual_return": 0.0,  # 需要计算
+                    "annual_return": float(latest_performance.annual_return) if latest_performance.annual_return else 0.0,
                     "volatility": 0.0,     # 需要计算
                     "sharpe_ratio": float(latest_performance.sharpe_ratio) if latest_performance.sharpe_ratio else 0.0,
                     "max_drawdown": float(latest_performance.max_drawdown) if latest_performance.max_drawdown else 0.0,
-                    "win_rate": float(latest_performance.accuracy) if latest_performance.accuracy else 0.0
+                    "win_rate": float(latest_performance.win_rate) if latest_performance.win_rate else 0.0
                 }
             else:
                 # 如果没有性能数据，基于股票价格计算简单收益率
@@ -428,9 +428,9 @@ async def get_backtest_result(
     async with get_db_session() as session:
         # 查询模型性能数据作为回测结果
         performance_result = await session.execute(
-            select(ModelPerformance, BacktestModel)
-            .join(BacktestModel, ModelPerformance.model_id == BacktestModel.id)
-            .where(ModelPerformance.id == result_id)
+            select(BacktestResult, AIModel)
+            .join(AIModel, BacktestResult.model_id == AIModel.id)
+            .where(BacktestResult.id == result_id)
         )
         performance_data = performance_result.first()
         
@@ -441,16 +441,16 @@ async def get_backtest_result(
         
         # 获取该模型最近的决策记录作为交易记录
         trades_result = await session.execute(
-            select(ModelDecision, Stock)
-            .join(Stock, ModelDecision.stock_id == Stock.id)
+            select(Decision, Stock)
+            .join(Stock, Decision.stock_id == Stock.id)
             .where(
                 and_(
-                    ModelDecision.model_id == model.id,
-                    ModelDecision.trade_date >= performance.backtest_date - timedelta(days=30),
-                    ModelDecision.trade_date <= performance.backtest_date
+                    Decision.id == model.id,
+                    Decision.generated_at >= performance.start_date - timedelta(days=30),
+                    Decision.generated_at <= performance.end_date
                 )
             )
-            .order_by(ModelDecision.trade_date.desc())
+            .order_by(Decision.generated_at.desc())
             .limit(10)
         )
         trades_data = trades_result.all()
@@ -460,12 +460,12 @@ async def get_backtest_result(
         for i, (decision, stock) in enumerate(trades_data):
             trades.append({
                 "id": i + 1,
-                "type": decision.decision,
-                "date": decision.trade_date.strftime("%Y-%m-%d"),
+                "type": decision.decision_type,
+                "date": decision.generated_at.strftime("%Y-%m-%d"),
                 "price": float(decision.confidence * 100) if decision.confidence else 0,  # 简化价格计算
                 "shares": 1000,  # 简化股数
                 "value": 100000,  # 简化价值
-                "profit": 500 if decision.decision == "SELL" else 0,  # 简化利润
+                "profit": 500 if decision.decision_type == "sell" else 0,  # 简化利润
                 "reason": f"{model.name}信号",
                 "symbol": stock.symbol
             })
@@ -475,15 +475,16 @@ async def get_backtest_result(
                 "id": performance.id,
                 "model_id": model.id,
                 "model_name": model.name,
-                "backtest_date": performance.backtest_date.strftime("%Y-%m-%d"),
+                "start_date": performance.start_date.strftime("%Y-%m-%d"),
+                "end_date": performance.end_date.strftime("%Y-%m-%d"),
                 "results": {
                     "total_return": float(performance.total_return) if performance.total_return else 0.0,
-                    "annual_return": 0.0,  # 需要计算
+                    "annual_return": float(performance.annual_return) if performance.annual_return else 0.0,
                     "volatility": 0.0,     # 需要计算
                     "sharpe_ratio": float(performance.sharpe_ratio) if performance.sharpe_ratio else 0.0,
                     "max_drawdown": float(performance.max_drawdown) if performance.max_drawdown else 0.0,
-                    "win_rate": float(performance.accuracy) if performance.accuracy else 0.0,
-                    "profit_factor": 1.0,  # 需要计算
+                    "win_rate": float(performance.win_rate) if performance.win_rate else 0.0,
+                    "profit_factor": float(performance.profit_factor) if performance.profit_factor else 1.0,
                     "total_trades": len(trades),
                     "winning_trades": len([t for t in trades if t.get('profit', 0) > 0]),
                     "losing_trades": len([t for t in trades if t.get('profit', 0) < 0])
@@ -511,60 +512,61 @@ async def get_backtest_results(
         conditions = []
         
         if model_id:
-            conditions.append(ModelPerformance.model_id == model_id)
+            conditions.append(BacktestResult.model_id == model_id)
     
-    if start_date:
-        conditions.append(ModelPerformance.backtest_date >= start_date)
+        if start_date:
+            conditions.append(BacktestResult.start_date >= start_date)
     
-    if end_date:
-        conditions.append(ModelPerformance.backtest_date <= end_date)
+        if end_date:
+            conditions.append(BacktestResult.end_date <= end_date)
     
-    # 查询模型性能数据
-    query = (
-        select(ModelPerformance, BacktestModel)
-        .join(BacktestModel, ModelPerformance.model_id == BacktestModel.id)
-        .where(and_(*conditions))
-        .order_by(ModelPerformance.backtest_date.desc())
-        .offset(skip)
-        .limit(limit)
-    )
-    
-    result = await session.execute(query)
-    performance_data = result.all()
-    
-    # 构建结果列表
-    results_list = []
-    for performance, model in performance_data:
-        # 获取该模型对应的股票（简化处理，取第一个有决策的股票）
-        stock_result = await session.execute(
-            select(Stock)
-            .join(ModelDecision, Stock.id == ModelDecision.stock_id)
-            .where(ModelDecision.model_id == model.id)
-            .limit(1)
+        # 查询模型性能数据
+        query = (
+            select(BacktestResult, AIModel)
+            .join(AIModel, BacktestResult.model_id == AIModel.id)
+            .where(and_(*conditions))
+            .order_by(BacktestResult.created_at.desc())
+            .offset(skip)
+            .limit(limit)
         )
-        stock = stock_result.scalar_one_or_none()
+    
+        result = await session.execute(query)
+        performance_data = result.all()
+    
+        # 构建结果列表
+        results_list = []
+        for performance, model in performance_data:
+            # 获取该模型对应的股票（简化处理，取第一个有决策的股票）
+            stock_result = await session.execute(
+                select(Stock)
+                .join(Decision, Stock.id == Decision.stock_id)
+                .where(Decision.id == model.id)
+                .limit(1)
+            )
+            stock = stock_result.scalar_one_or_none()
         
-        results_list.append({
-            "id": performance.id,
-            "symbol": stock.symbol if stock else "N/A",
-            "model_id": model.id,
-            "model_name": model.name,
-            "backtest_date": performance.backtest_date.strftime("%Y-%m-%d"),
-            "total_return": float(performance.total_return) if performance.total_return else 0.0,
-            "sharpe_ratio": float(performance.sharpe_ratio) if performance.sharpe_ratio else 0.0,
-            "max_drawdown": float(performance.max_drawdown) if performance.max_drawdown else 0.0,
-            "created_at": performance.created_at.strftime("%Y-%m-%dT%H:%M:%SZ") if performance.created_at else "2025-10-16T10:00:00Z"
-        })
+            results_list.append({
+                "id": performance.id,
+                "symbol": stock.symbol if stock else "N/A",
+                "model_id": model.id,
+                "model_name": model.name,
+                "start_date": performance.start_date.strftime("%Y-%m-%d"),
+                "end_date": performance.end_date.strftime("%Y-%m-%d"),
+                "total_return": float(performance.total_return) if performance.total_return else 0.0,
+                "sharpe_ratio": float(performance.sharpe_ratio) if performance.sharpe_ratio else 0.0,
+                "max_drawdown": float(performance.max_drawdown) if performance.max_drawdown else 0.0,
+                "created_at": performance.created_at.strftime("%Y-%m-%dT%H:%M:%SZ") if performance.created_at else "2025-10-16T10:00:00Z"
+            })
     
-    # 获取总数
-    count_query = select(func.count(ModelPerformance.id)).where(and_(*conditions))
-    total_result = await session.execute(count_query)
-    total = total_result.scalar()
+        # 获取总数
+        count_query = select(func.count(BacktestResult.id)).where(and_(*conditions))
+        total_result = await session.execute(count_query)
+        total = total_result.scalar()
     
-    # 应用符号过滤（在查询后过滤）
-    if symbol:
-        results_list = [r for r in results_list if r["symbol"] == symbol]
-        total = len(results_list)
+        # 应用符号过滤（在查询后过滤）
+        if symbol:
+            results_list = [r for r in results_list if r["symbol"] == symbol]
+            total = len(results_list)
     
     return APIResponse(
         data={

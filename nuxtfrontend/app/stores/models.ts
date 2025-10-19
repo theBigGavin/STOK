@@ -10,6 +10,7 @@ import { useErrorHandler } from '~/composables/errorHandler';
 
 // 模型性能指标接口 - 与API返回的数据结构保持一致
 interface ModelPerformance {
+  modelId?: string; // 可选字段，用于缓存时标识模型
   modelName: string;
   accuracy: number;
   totalReturn: number;
@@ -61,6 +62,7 @@ interface ModelState {
   // 模型统计
   stats: {
     totalModels: number;
+    totalModelPerformance: number;
     activeModels: number;
     technicalModels: number;
     mlModels: number;
@@ -93,6 +95,7 @@ export const useModelStore = defineStore('models', () => {
     trainingStatus: new Map(),
     stats: {
       totalModels: 0,
+      totalModelPerformance: 0,
       activeModels: 0,
       technicalModels: 0,
       mlModels: 0,
@@ -229,6 +232,7 @@ export const useModelStore = defineStore('models', () => {
         // 重置统计信息
         state.stats = {
           totalModels: 0,
+          totalModelPerformance: 0,
           activeModels: 0,
           technicalModels: 0,
           mlModels: 0,
@@ -243,6 +247,7 @@ export const useModelStore = defineStore('models', () => {
       if (state.models.length === 0) {
         state.stats = {
           totalModels: 0,
+          totalModelPerformance: 0,
           activeModels: 0,
           technicalModels: 0,
           mlModels: 0,
@@ -254,6 +259,7 @@ export const useModelStore = defineStore('models', () => {
       }
 
       const totalModels = state.models.length;
+      const totalModelPerformance = state.modelPerformance.size;
       const activeModels = state.models.filter(model => model.isActive).length;
 
       const technicalModels = state.models.filter(model => model.modelType === 'technical').length;
@@ -282,6 +288,7 @@ export const useModelStore = defineStore('models', () => {
 
       state.stats = {
         totalModels,
+        totalModelPerformance,
         activeModels,
         technicalModels,
         mlModels,
@@ -372,6 +379,7 @@ export const useModelStore = defineStore('models', () => {
         console.log('从缓存获取模型列表:', response);
         // 从响应对象中提取 data 数组
         state.models = response.data || [];
+        console.log('解析后的模型列表:', state.models);
         privateMethods.updateStats();
         return state.models;
       } catch (error) {
@@ -529,10 +537,11 @@ export const useModelStore = defineStore('models', () => {
         const performanceList = await modelApi.getAllModelPerformance();
 
         // 更新性能指标缓存
-        // 由于API返回的性能数据没有modelId，我们暂时不缓存
-        // performanceList.forEach(performance => {
-        //   state.modelPerformance.set(performance.modelId, performance);
-        // });
+        performanceList.forEach(performance => {
+          // if (performance.modelId) {
+          state.modelPerformance.set(performance.modelId, performance);
+          // }
+        });
 
         return performanceList;
       } catch (error) {
@@ -552,13 +561,16 @@ export const useModelStore = defineStore('models', () => {
 
       try {
         const performanceList = await cachedModelApi.getAllModelPerformance();
+        console.log('从缓存获取所有模型性能指标:', performanceList);
 
         // 更新性能指标缓存
-        // 由于API返回的性能数据没有modelId，我们暂时不缓存
-        // performanceList.forEach(performance => {
-        //   state.modelPerformance.set(performance.modelId, performance);
-        // });
+        performanceList.forEach(performance => {
+          if (performance.modelId) {
+            state.modelPerformance.set(performance.modelId, performance);
+          }
+        });
 
+        privateMethods.updateStats();
         return performanceList;
       } catch (error) {
         state.error = handleApiError(error).message;
@@ -735,6 +747,7 @@ export const useModelStore = defineStore('models', () => {
       state.trainingStatus.clear();
       state.stats = {
         totalModels: 0,
+        totalModelPerformance: 0,
         activeModels: 0,
         technicalModels: 0,
         mlModels: 0,

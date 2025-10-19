@@ -116,7 +116,6 @@ async def get_models(
             status="success"
         )
 
-
 @router.get("/models/performance", response_model=APIResponse)
 async def get_all_models_performance(
     skip: int = Query(0, ge=0, description="跳过记录数"),
@@ -176,6 +175,7 @@ async def get_all_models_performance(
                     }
                 
                 performance_data.append({
+                    "modelId": model.id,
                     "modelName": model.name,
                     "accuracy": round(float(metrics["accuracy"]), 4),
                     "totalReturn": round(float(metrics["totalReturn"]), 4),
@@ -617,81 +617,3 @@ async def create_model_performance(
         )
 
 
-@router.get("/models/performance", response_model=APIResponse)
-async def get_all_models_performance(
-    skip: int = Query(0, ge=0, description="跳过记录数"),
-    limit: int = Query(100, ge=1, le=1000, description="返回记录数"),
-    active_only: bool = Query(True, description="只返回活跃模型")
-):
-    """获取所有模型的性能数据（前端兼容版本）"""
-    try:
-        logger.info(f"获取所有模型性能请求: skip={skip}, limit={limit}, active_only={active_only}")
-        
-        async with get_db_session() as session:
-            # 构建查询条件
-            conditions = []
-            if active_only:
-                conditions.append(AIModel.is_active == True)
-            
-            # 查询模型
-            query = select(AIModel).offset(skip).limit(limit)
-            if conditions:
-                for condition in conditions:
-                    query = query.where(condition)
-            
-            result = await session.execute(query)
-            models = result.scalars().all()
-            
-            # 构建性能数据
-            performance_data = []
-            for model in models:
-                # 获取最新回测结果
-                perf_result = await session.execute(
-                    select(BacktestResult)
-                    .where(BacktestResult.model_id == model.id)
-                    .order_by(BacktestResult.created_at.desc())
-                    .limit(1)
-                )
-                latest_perf = perf_result.scalar_one_or_none()
-                
-                # 构建性能指标
-                if latest_perf:
-                    metrics = {
-                        "accuracy": latest_perf.win_rate or 0,
-                        "totalReturn": latest_perf.total_return or 0,
-                        "sharpeRatio": latest_perf.sharpe_ratio or 0,
-                        "winRate": latest_perf.win_rate or 0,
-                        "maxDrawdown": latest_perf.max_drawdown or 0,
-                        "profitFactor": latest_perf.profit_factor or 0
-                    }
-                else:
-                    # 如果没有回测数据，使用模型本身的性能评分
-                    metrics = {
-                        "accuracy": model.performance_score or 0,
-                        "totalReturn": 0,
-                        "sharpeRatio": 0,
-                        "winRate": model.performance_score or 0,
-                        "maxDrawdown": 0,
-                        "profitFactor": 0
-                    }
-                
-                performance_data.append({
-                    "modelName": model.name,
-                    "accuracy": round(float(metrics["accuracy"]), 4),
-                    "totalReturn": round(float(metrics["totalReturn"]), 4),
-                    "sharpeRatio": round(float(metrics["sharpeRatio"]), 4),
-                    "winRate": round(float(metrics["winRate"]), 4),
-                    "lastUpdated": model.updated_at.isoformat() if model.updated_at else model.created_at.isoformat()
-                })
-            
-            logger.info(f"成功获取 {len(performance_data)} 个模型的性能数据")
-            
-            return APIResponse(
-                data=performance_data,
-                message="获取模型性能数据成功",
-                status="success"
-            )
-            
-    except Exception as e:
-        logger.error(f"获取模型性能数据失败: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"获取模型性能数据失败: {str(e)}")

@@ -118,10 +118,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useDashboardData } from '~/composables/useDashboardData';
 
 interface ModelPerformanceData {
+  modelId: string;
   modelName: string;
   accuracy?: number;
   totalReturn?: number;
@@ -130,7 +131,21 @@ interface ModelPerformanceData {
   lastUpdated?: string;
 }
 
-const { modelPerformance, loading, lastUpdated, refreshDashboard } = useDashboardData();
+const { modelPerformance, loading, lastUpdated, refreshDashboard, loadDashboardData } =
+  useDashboardData();
+
+// 组件挂载时加载模型性能数据
+onMounted(async () => {
+  console.log('组件挂载，开始加载模型性能数据');
+  console.log('当前模型性能数据:', JSON.stringify(modelPerformance.value));
+
+  // 如果当前没有数据，则加载数据
+  if (modelPerformance.value.length === 0) {
+    await loadDashboardData();
+  }
+
+  console.log('模型性能数据加载完成', JSON.stringify(modelPerformance.value));
+});
 
 // 状态
 const selectedMetric = ref('accuracy');

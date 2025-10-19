@@ -7,6 +7,7 @@ import type { ModelInfo } from '~/types/models';
 
 // 模型性能指标类型 - 匹配后端API返回的数据结构
 interface ModelPerformance {
+  modelId: string;
   modelName: string;
   accuracy: number;
   totalReturn: number;

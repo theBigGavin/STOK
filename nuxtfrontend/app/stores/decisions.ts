@@ -460,7 +460,7 @@ export const useDecisionStore = defineStore('decisions', () => {
           decision: decision.decision.toUpperCase() as 'BUY' | 'SELL' | 'HOLD',
           confidence: decision.confidence * 100, // 转换为百分比
           timestamp: decision.timestamp,
-          riskLevel: decision.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH'
+          riskLevel: decision.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH',
         }));
 
         // 将最近决策添加到store中
@@ -472,11 +472,11 @@ export const useDecisionStore = defineStore('decisions', () => {
             timestamp: decision.timestamp,
             finalDecision: {
               decision: decision.decision,
-              confidence: decision.confidence
+              confidence: decision.confidence,
             },
             riskAssessment: {
-              riskLevel: decision.riskLevel
-            }
+              riskLevel: decision.riskLevel,
+            },
           };
 
           // 检查是否已存在相同的决策

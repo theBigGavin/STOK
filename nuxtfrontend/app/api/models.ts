@@ -45,6 +45,22 @@ interface ModelTrainingResponse {
   message?: string;
 }
 
+// 性能趋势数据类型
+interface PerformanceTrendData {
+  date: string;
+  label: string;
+  accuracy: number;
+  totalReturn: number;
+  sharpeRatio: number;
+  winRate: number;
+}
+
+interface PerformanceTrendResponse {
+  trend: PerformanceTrendData[];
+  metric: string;
+  days: number;
+}
+
 /**
  * 模型API服务
  */
@@ -346,6 +362,37 @@ export const modelApi = {
       throw handleApiError(error);
     }
   },
+
+  /**
+   * 获取模型性能趋势数据
+   */
+  async getModelsPerformanceTrend(
+    days: number = 7,
+    metric: string = 'accuracy'
+  ): Promise<PerformanceTrendResponse> {
+    const { request, handleApiError } = useApiWithErrorHandler();
+
+    try {
+      const response = await request('/models/performance/trend', {
+        method: 'GET',
+        params: { days, metric },
+      });
+
+      if (!response.data) {
+        throw new Error('API响应数据为空');
+      }
+
+      // 后端返回的是APIResponse格式，需要提取data字段
+      const apiResponse = response.data;
+      if (apiResponse.data) {
+        return apiResponse.data;
+      } else {
+        throw new Error('API响应数据格式错误');
+      }
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };
 
 /**
@@ -358,18 +405,32 @@ export const useCachedModelApi = () => {
     /**
      * 获取所有模型列表（带缓存）
      */
-    async getModels(ttl: number = 10 * 60 * 1000): Promise<{ data: ModelInfo[]; total: number; skip: number; limit: number }> {
+    async getModels(
+      ttl: number = 10 * 60 * 1000
+    ): Promise<{ data: ModelInfo[]; total: number; skip: number; limit: number }> {
       const cacheKey = 'models:all';
-      const response = await cachedGet<{ data: ModelInfo[]; total: number; skip: number; limit: number }>('/models', undefined, cacheKey, ttl);
+      const response = await cachedGet<{
+        data: ModelInfo[];
+        total: number;
+        skip: number;
+        limit: number;
+      }>('/models', undefined, cacheKey, ttl);
       return response;
     },
 
     /**
      * 获取活跃模型列表（带缓存）
      */
-    async getActiveModels(ttl: number = 5 * 60 * 1000): Promise<{ data: ModelInfo[]; total: number; skip: number; limit: number }> {
+    async getActiveModels(
+      ttl: number = 5 * 60 * 1000
+    ): Promise<{ data: ModelInfo[]; total: number; skip: number; limit: number }> {
       const cacheKey = 'models:active';
-      const response = await cachedGet<{ data: ModelInfo[]; total: number; skip: number; limit: number }>('/models/active', undefined, cacheKey, ttl);
+      const response = await cachedGet<{
+        data: ModelInfo[];
+        total: number;
+        skip: number;
+        limit: number;
+      }>('/models/active', undefined, cacheKey, ttl);
       return response;
     },
 
@@ -406,6 +467,23 @@ export const useCachedModelApi = () => {
     },
 
     /**
+     * 获取模型性能趋势数据（带缓存）
+     */
+    async getModelsPerformanceTrend(
+      days: number = 7,
+      metric: string = 'accuracy',
+      ttl: number = 30 * 60 * 1000
+    ): Promise<PerformanceTrendResponse> {
+      const cacheKey = `models:performance:trend:${days}:${metric}`;
+      return cachedGet<PerformanceTrendResponse>(
+        '/models/performance/trend',
+        { days, metric },
+        cacheKey,
+        ttl
+      );
+    },
+
+    /**
      * 清除模型相关缓存
      */
     clearModelCache(): void {
@@ -423,10 +501,10 @@ function transformApiModelToFrontend(apiModel: unknown): ModelInfo {
 
   // 模型类型映射
   const modelTypeMapping: Record<string, 'technical' | 'machine_learning' | 'fundamental'> = {
-    'technical': 'technical',
-    'ml': 'machine_learning',
-    'machine_learning': 'machine_learning',
-    'fundamental': 'fundamental'
+    technical: 'technical',
+    ml: 'machine_learning',
+    machine_learning: 'machine_learning',
+    fundamental: 'fundamental',
   };
 
   // 转换主要字段
@@ -436,9 +514,12 @@ function transformApiModelToFrontend(apiModel: unknown): ModelInfo {
     description: model.description ? String(model.description) : undefined,
     modelType: modelTypeMapping[String(model.model_type || model.modelType)] || 'technical',
     parameters: (model.parameters as Record<string, unknown>) || {},
-    weight: typeof model.weight === 'string' ? parseFloat(model.weight) : (Number(model.weight) || 0),
+    weight: typeof model.weight === 'string' ? parseFloat(model.weight) : Number(model.weight) || 0,
     isActive: model.is_active !== undefined ? Boolean(model.is_active) : Boolean(model.isActive),
-    performanceScore: typeof model.performance_score === 'string' ? parseFloat(model.performance_score) : (Number(model.performance_score) || 0),
+    performanceScore:
+      typeof model.performance_score === 'string'
+        ? parseFloat(model.performance_score)
+        : Number(model.performance_score) || 0,
     createdAt: model.created_at ? String(model.created_at) : undefined,
     updatedAt: model.updated_at ? String(model.updated_at) : undefined,
   };
@@ -448,11 +529,26 @@ function transformApiModelToFrontend(apiModel: unknown): ModelInfo {
   if (performanceMetrics && typeof performanceMetrics === 'object') {
     const metrics = performanceMetrics as Record<string, unknown>;
     frontendModel.performanceMetrics = {
-      accuracy: typeof metrics.win_rate === 'string' ? parseFloat(metrics.win_rate) : (Number(metrics.win_rate) || 0),
-      totalReturn: typeof metrics.total_return === 'string' ? parseFloat(metrics.total_return) : (Number(metrics.total_return) || 0),
-      sharpeRatio: typeof metrics.sharpe_ratio === 'string' ? parseFloat(metrics.sharpe_ratio) : (Number(metrics.sharpe_ratio) || 0),
-      maxDrawdown: typeof metrics.max_drawdown === 'string' ? parseFloat(metrics.max_drawdown) : (Number(metrics.max_drawdown) || 0),
-      winRate: typeof metrics.win_rate === 'string' ? parseFloat(metrics.win_rate) : (Number(metrics.win_rate) || 0),
+      accuracy:
+        typeof metrics.win_rate === 'string'
+          ? parseFloat(metrics.win_rate)
+          : Number(metrics.win_rate) || 0,
+      totalReturn:
+        typeof metrics.total_return === 'string'
+          ? parseFloat(metrics.total_return)
+          : Number(metrics.total_return) || 0,
+      sharpeRatio:
+        typeof metrics.sharpe_ratio === 'string'
+          ? parseFloat(metrics.sharpe_ratio)
+          : Number(metrics.sharpe_ratio) || 0,
+      maxDrawdown:
+        typeof metrics.max_drawdown === 'string'
+          ? parseFloat(metrics.max_drawdown)
+          : Number(metrics.max_drawdown) || 0,
+      winRate:
+        typeof metrics.win_rate === 'string'
+          ? parseFloat(metrics.win_rate)
+          : Number(metrics.win_rate) || 0,
     };
   }
 

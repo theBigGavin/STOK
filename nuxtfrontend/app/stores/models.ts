@@ -273,9 +273,9 @@ export const useModelStore = defineStore('models', () => {
       const avgAccuracy =
         modelsWithAccuracy.length > 0
           ? modelsWithAccuracy.reduce(
-            (sum, model) => sum + (model.performanceMetrics?.accuracy || 0),
-            0
-          ) / modelsWithAccuracy.length
+              (sum, model) => sum + (model.performanceMetrics?.accuracy || 0),
+              0
+            ) / modelsWithAccuracy.length
           : 0;
 
       // 找出最佳模型
@@ -595,7 +595,7 @@ export const useModelStore = defineStore('models', () => {
           modelId: modelId,
           weight: config.weight,
           isActive: config.isActive,
-          reason: config.reason
+          reason: config.reason,
         };
 
         const existingIndex = state.weightConfigs.findIndex(c => c.modelId === modelId);
@@ -644,7 +644,7 @@ export const useModelStore = defineStore('models', () => {
           modelId: config.modelId.toString(),
           weight: config.weight,
           isActive: config.isActive,
-          reason: config.reason
+          reason: config.reason,
         }));
 
         // 更新模型列表中的权重

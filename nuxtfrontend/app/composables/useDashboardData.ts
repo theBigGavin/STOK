@@ -327,10 +327,10 @@ export const useDashboardData = () => {
             .map(model => ({
               modelId: model.modelId,
               modelName: model.name,
-              accuracy: (model.performanceMetrics?.accuracy || Math.random() * 30 + 70), // 70-100% 的随机准确率
+              accuracy: model.performanceMetrics?.accuracy || Math.random() * 30 + 70, // 70-100% 的随机准确率
               totalReturn: Math.random() * 20 + 5, // 5-25% 的随机回报率
               sharpeRatio: Math.random() * 2 + 0.5, // 0.5-2.5 的随机夏普比率
-              winRate: (model.performanceMetrics?.winRate || Math.random() * 30 + 65), // 65-95% 的随机胜率
+              winRate: model.performanceMetrics?.winRate || Math.random() * 30 + 65, // 65-95% 的随机胜率
               lastUpdated: model.updatedAt || model.createdAt || new Date().toISOString(),
             }))
             .filter(item => item.accuracy > 0);

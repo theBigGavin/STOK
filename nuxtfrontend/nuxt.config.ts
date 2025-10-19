@@ -50,6 +50,11 @@ export default defineNuxtConfig({
   typescript: {
     typeCheck: false,
     strict: false,
+    tsConfig: {
+      compilerOptions: {
+        allowSyntheticDefaultImports: true,
+      },
+    },
   },
 
   eslint: {

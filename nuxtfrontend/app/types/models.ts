@@ -3,7 +3,7 @@
  */
 
 export interface ModelInfo {
-  modelId: string;  // 改为string以匹配后端的UUID
+  modelId: string; // 改为string以匹配后端的UUID
   name: string;
   description?: string;
   modelType: 'technical' | 'machine_learning' | 'fundamental'; // 匹配后端类型

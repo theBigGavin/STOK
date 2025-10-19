@@ -230,10 +230,7 @@ export const decisionApi = {
   /**
    * 获取最近决策列表
    */
-  async getRecentDecisions(
-    limit: number = 10,
-    skip: number = 0
-  ): Promise<RecentDecision[]> {
+  async getRecentDecisions(limit: number = 10, skip: number = 0): Promise<RecentDecision[]> {
     const { request, handleApiError } = useApiWithErrorHandler();
 
     try {

@@ -1,4 +1,3 @@
-<!-- components/charts/EquityCurveChart.vue -->
 <template>
   <UCard>
     <template #header>
@@ -6,12 +5,8 @@
         <h3 class="text-lg font-semibold">净值曲线</h3>
         <div class="flex gap-2">
           <USelect v-model="selectedComparison" :options="comparisonOptions" class="w-40" />
-          <UButton
-            v-for="period in periods"
-            :key="period.value"
-            :variant="selectedPeriod === period.value ? 'solid' : 'outline'"
-            @click="handlePeriodChange(period.value)"
-          >
+          <UButton v-for="period in periods" :key="period.value"
+            :variant="selectedPeriod === period.value ? 'solid' : 'outline'" @click="handlePeriodChange(period.value)">
             {{ period.label }}
           </UButton>
         </div>
@@ -33,54 +28,24 @@
       </div>
     </div>
 
-    <div v-else-if="!data || data.length === 0" class="h-80 flex items-center justify-center">
+    <div v-else-if="!curves || curves.length === 0" class="h-80 flex items-center justify-center">
       <div class="text-center">
         <UIcon name="i-heroicons-chart-line" class="h-8 w-8 text-gray-400" />
         <p class="mt-2 text-sm text-gray-500">暂无净值数据</p>
       </div>
     </div>
 
-    <VisXYContainer v-else :data="chartData" class="h-80">
-      <template v-for="curve in visibleCurves" :key="curve.name">
-        <VisLine
-          :x="x"
-          :y="(d: EquityData) => getCurveValue(d, curve.name)"
-          :color="curve.color"
-          :width="curve.name === '基准' ? 1 : 2"
-        />
-        <VisArea
-          v-if="curve.name !== '基准'"
-          :x="x"
-          :y="(d: EquityData) => getCurveValue(d, curve.name)"
-          :color="curve.color"
-          :opacity="0.1"
-        />
-      </template>
-      <VisAxis type="x" :tick-format="formatDate" />
-      <VisAxis type="y" :tick-format="formatEquity" />
-      <VisCrosshair :template="tooltipTemplate" />
-      <VisTooltip />
-      <!-- <VisLegend :items="legendItems" /> -->
-    </VisXYContainer>
+    <div v-else class="h-80">
+      <Line :data="chartData" :options="chartOptions" :key="chartKey" />
+    </div>
   </UCard>
 </template>
 
 <script setup lang="ts">
-import {
-  VisXYContainer,
-  VisLine,
-  VisArea,
-  VisAxis,
-  VisCrosshair,
-  VisTooltip,
-  // VisLegend,
-} from '@unovis/vue';
+import { Line } from '@ant-design/charts';
 import type { EquityPoint } from '~/types/backtest';
-
-interface EquityData {
-  date: Date;
-  [curveName: string]: number | null | undefined;
-}
+import { chartTheme } from '~/utils/chartTheme';
+import { transformEquityData } from '~/utils/chartAdapter';
 
 interface EquityCurve {
   name: string;
@@ -109,6 +74,7 @@ const emit = defineEmits<{
 
 const selectedPeriod = ref(props.selectedPeriod);
 const selectedComparison = ref('all');
+const chartKey = ref(0);
 
 const periods = [
   { label: '1月', value: '1M' },
@@ -123,15 +89,6 @@ const comparisonOptions = [
   { label: '仅策略', value: 'strategy' },
   { label: '策略vs基准', value: 'vsBenchmark' },
 ];
-
-const _curveColors = {
-  策略净值: 'var(--color-primary-500)',
-  基准净值: 'var(--color-gray-400)',
-  模型A: 'var(--color-emerald-500)',
-  模型B: 'var(--color-amber-500)',
-  模型C: 'var(--color-red-500)',
-  模型D: 'var(--color-purple-500)',
-};
 
 // 获取可见曲线
 const visibleCurves = computed(() => {
@@ -148,105 +105,135 @@ const visibleCurves = computed(() => {
 });
 
 // 转换数据格式
-const chartData = computed<EquityData[]>(() => {
-  if (!props.curves || props.curves.length === 0) return [];
+const chartData = computed(() => {
+  if (!visibleCurves.value || visibleCurves.value.length === 0) {
+    return { datasets: [] };
+  }
 
-  // 获取所有日期点
-  const allDates = new Set<string>();
-  props.curves.forEach(curve => {
-    curve.data.forEach(point => {
-      allDates.add(point.date);
-    });
-  });
+  const transformedData = transformEquityData(visibleCurves.value);
 
-  // 创建合并的数据结构
-  const dateMap = new Map<string, EquityData>();
-
-  Array.from(allDates)
-    .sort()
-    .forEach(dateStr => {
-      const date = new Date(dateStr);
-      const dataPoint: EquityData = { date } as EquityData;
-
-      props.curves.forEach(curve => {
-        const point = curve.data.find(p => p.date === dateStr);
-        dataPoint[curve.name] = point ? point.value : null;
-      });
-
-      dateMap.set(dateStr, dataPoint);
-    });
-
-  return Array.from(dateMap.values());
+  return {
+    datasets: visibleCurves.value.map(curve => ({
+      label: curve.name,
+      data: transformedData.filter(item => item.name === curve.name),
+      borderColor: curve.color,
+      backgroundColor: curve.color + '20', // 添加透明度
+      borderWidth: curve.name === '基准净值' ? 1 : 2,
+      fill: curve.name !== '基准净值',
+      tension: 0.4,
+      pointRadius: 0,
+    }))
+  };
 });
 
-// 获取曲线值
-const getCurveValue = (d: EquityData, curveName: string) => {
-  return d[curveName] || 0;
-};
-
-const x = (d: EquityData) => d.date;
-
-const formatDate = (date: Date) =>
-  date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-
-const formatEquity = (value: number) => {
-  if (value >= 1000) {
-    return `¥${(value / 1000).toFixed(1)}k`;
-  }
-  return `¥${value.toFixed(0)}`;
-};
-
-const tooltipTemplate = (d: EquityData) => {
-  const date = d.date.toLocaleDateString('zh-CN');
-  const lines = visibleCurves.value
-    .map(curve => {
-      const value = d[curve.name];
-      if (value === null || value === undefined) return null;
-      const formattedValue = formatEquity(value);
-      return `<span style="color:${curve.color}">●</span> ${curve.name}: ${formattedValue}`;
-    })
-    .filter(Boolean);
-
-  return [`<strong>${date}</strong>`, ...lines].join('<br>');
-};
-
-// 图例项
-// const legendItems = computed(() =>
-//   visibleCurves.value.map(curve => ({
-//     name: curve.name,
-//     color: curve.color,
-//   }))
-// );
+// 图表配置
+const chartOptions = computed(() => ({
+  animation: {
+    duration: 1000,
+    easing: 'easeOutQuart' as const,
+  },
+  interaction: {
+    mode: 'index' as const,
+    intersect: false,
+  },
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top' as const,
+      labels: {
+        usePointStyle: true,
+        padding: 20,
+        font: {
+          size: 12,
+        },
+      },
+    },
+    tooltip: {
+      mode: 'index' as const,
+      intersect: false,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      titleColor: '#374151',
+      bodyColor: '#6B7280',
+      borderColor: '#E5E7EB',
+      borderWidth: 1,
+      cornerRadius: 6,
+      padding: 12,
+      callbacks: {
+        label: (context: any) => {
+          const label = context.dataset.label || '';
+          const value = context.parsed.y;
+          return `${label}: ¥${value.toFixed(2)}`;
+        },
+      },
+    },
+  },
+  scales: {
+    x: {
+      type: 'time' as const,
+      time: {
+        unit: 'day' as const,
+        displayFormats: {
+          day: 'MM-dd',
+        },
+      },
+      grid: {
+        display: false,
+      },
+      ticks: {
+        maxRotation: 0,
+        autoSkip: true,
+        maxTicksLimit: 6,
+      },
+    },
+    y: {
+      beginAtZero: false,
+      grid: {
+        color: '#F3F4F6',
+      },
+      ticks: {
+        callback: (value: any) => {
+          if (value >= 1000) {
+            return `¥${(value / 1000).toFixed(1)}k`;
+          }
+          return `¥${value.toFixed(0)}`;
+        },
+      },
+    },
+  },
+  maintainAspectRatio: false,
+}));
 
 const handlePeriodChange = (period: string) => {
   selectedPeriod.value = period;
   emit('periodChange', period);
+  // 强制重新渲染图表
+  chartKey.value++;
 };
 
 // 监听比较模式变化
-watch(selectedComparison, newComparison => {
+watch(selectedComparison, (newComparison) => {
   emit('comparisonChange', newComparison);
+  // 强制重新渲染图表
+  chartKey.value++;
 });
+
+// 监听曲线数据变化
+watch(() => props.curves, () => {
+  chartKey.value++;
+}, { deep: true });
 </script>
 
 <style scoped>
-:deep(.vis-tooltip) {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 8px 12px;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  font-size: 14px;
+:deep(.ant-chart) {
+  width: 100%;
+  height: 100%;
 }
 
-:deep(.vis-legend) {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 8px 12px;
-  box-shadow: 0 2px 4px rgb(0 0 0 / 0.1);
+:deep(.ant-chart-legend) {
+  padding: 8px 0;
+}
+
+:deep(.ant-chart-tooltip) {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 </style>

@@ -1,159 +1,152 @@
-# Research Document: 股票 AI 策略回测决策系统
+# 图表库迁移研究文档
 
-**Feature**: 001-stock-ai-decision-system  
-**Date**: 2025-10-18  
-**Status**: Draft
+## 研究任务
 
-## 技术栈研究
+### 1. Ant Design Charts Vue 集成研究
 
-### 后端技术栈
+**研究目标**: 了解如何在 Nuxt 3 + Vue 3 项目中集成 Ant Design Charts
 
-**Decision**: FastAPI + SQLAlchemy + PostgreSQL + Redis + Celery
+**发现**:
 
-**Rationale**:
+- Ant Design Charts 提供 Vue 3 版本：`@ant-design/charts-vue`
+- 支持 Composition API 和 TypeScript
+- 与现有的 Ant Design 生态系统（@nuxt/ui）有更好的集成
+- 基于 G2Plot 图表引擎，提供丰富的图表类型和配置选项
 
-- FastAPI 提供高性能的异步 API 支持，自动生成 OpenAPI 文档
-- SQLAlchemy 提供强大的 ORM 功能和异步支持
-- PostgreSQL 适合金融数据的复杂查询和事务处理
-- Redis 用于缓存和 Celery 任务队列，提高系统性能
-- Celery 处理异步任务，如数据更新和模型计算
+**决策**: 使用 `@ant-design/charts-vue` 作为替代方案
 
-**Alternatives considered**:
+**理由**:
 
-- Django: 同步框架，不适合高并发场景
-- Flask: 需要更多手动配置，缺少内置异步支持
-- MongoDB: 不适合金融数据的强一致性要求
+- 与现有 UI 组件库保持一致
+- 更丰富的图表类型和配置选项
+- 更好的 TypeScript 支持
+- 活跃的社区和维护
 
-### 前端技术栈
+**替代方案考虑**:
 
-**Decision**: Nuxt 3 + Vue 3 + TypeScript + Pinia
+- Chart.js: 功能丰富但集成度较低
+- ECharts: 功能强大但学习曲线较陡
+- D3.js: 灵活性高但开发成本大
 
-**Rationale**:
+### 2. Unovis 到 Ant Design Charts 组件映射
 
-- Nuxt 3 提供全栈框架能力，支持 SSR 和静态生成
-- Vue 3 Composition API 提供更好的类型推断和代码组织
-- TypeScript 提高代码质量和开发体验
-- Pinia 提供简单直观的状态管理
+**研究目标**: 建立 Unovis 组件到 Ant Design Charts 的映射关系
 
-**Alternatives considered**:
+**发现**:
 
-- React: 生态系统复杂，学习曲线较陡
-- Angular: 框架较重，不适合快速开发
-- Vue 2 Options API: 已过时，缺少 Composition API 的优势
+| Unovis 组件      | Ant Design Charts 对应     | 迁移复杂度 |
+| ---------------- | -------------------------- | ---------- |
+| `VisXYContainer` | `Line`, `Area`, `DualAxes` | 中等       |
+| `VisLine`        | `Line` 图表                | 低         |
+| `VisArea`        | `Area` 图表                | 低         |
+| `VisAxis`        | 内置轴配置                 | 低         |
+| `VisCrosshair`   | 内置十字准星               | 低         |
+| `VisTooltip`     | 内置提示框                 | 低         |
+| `VisBar`         | `Bar` 图表                 | 低         |
+| `VisLegend`      | 内置图例                   | 低         |
 
-### 数据处理和机器学习
+**决策**: 采用直接组件替换策略
 
-**Decision**: Pandas + NumPy + TA-Lib + scikit-learn + XGBoost
+**理由**:
 
-**Rationale**:
+- Ant Design Charts 提供更简洁的 API
+- 减少组件嵌套层级
+- 更好的性能表现
 
-- Pandas 和 NumPy 提供强大的数据处理能力
-- TA-Lib 提供专业的技术指标计算
-- scikit-learn 提供基础的机器学习算法
-- XGBoost 提供高性能的梯度提升算法
+### 3. 数据格式转换需求
 
-**Alternatives considered**:
+**研究目标**: 分析数据格式转换需求
 
-- PyTorch/TensorFlow: 对于传统金融模型过于复杂
-- Dask: 对于单机部署过于复杂
+**发现**:
 
-## 架构决策
+- Unovis 使用函数式数据访问器模式
+- Ant Design Charts 使用配置对象模式
+- 需要将函数式数据访问器转换为配置对象
 
-### 多模型投票机制
+**转换示例**:
 
-**Decision**: 加权投票系统，基于模型历史表现动态调整权重
+```typescript
+// Unovis 方式
+const x = (d: EquityData) => d.date;
+const y = (d: EquityData) => d.value;
 
-**Rationale**:
+// Ant Design Charts 方式
+const config = {
+  data: chartData,
+  xField: "date",
+  yField: "value",
+};
+```
 
-- 提高决策的稳定性和准确性
-- 降低单一模型失效的风险
-- 提供决策透明度和可解释性
+**决策**: 创建数据适配器函数
 
-**Implementation**:
+**理由**:
 
-- 每个模型实现 `BaseBacktestModel` 接口
-- 投票权重基于历史回测表现动态计算
-- 决策聚合使用加权平均和阈值判断
+- 保持现有数据结构不变
+- 简化迁移过程
+- 便于后续维护
 
-### 数据流设计
+### 4. 交互功能兼容性
 
-**Decision**: 实时数据流 + 批量回测处理
+**研究目标**: 确保交互功能（工具提示、十字准星、事件）的兼容性
 
-**Rationale**:
+**发现**:
 
-- 实时数据支持即时决策
-- 批量处理支持历史回测验证
-- 分离处理逻辑提高系统稳定性
+- Ant Design Charts 提供内置的交互功能
+- 工具提示配置更灵活
+- 事件系统略有不同但功能完整
 
-**Implementation**:
+**决策**: 使用 Ant Design Charts 的内置交互功能
 
-- Redis 缓存实时股票数据
-- Celery 处理批量数据更新
-- PostgreSQL 存储历史数据和回测结果
+**理由**:
 
-## 性能优化策略
+- 减少自定义代码
+- 更好的性能
+- 更稳定的交互体验
 
-### 缓存策略
+### 5. 样式和主题一致性
 
-**Decision**: 多级缓存 (Redis + 内存缓存)
+**研究目标**: 确保图表样式与现有 UI 保持一致
 
-**Rationale**:
+**发现**:
 
-- Redis 缓存常用股票数据和模型结果
-- 内存缓存高频访问的配置和元数据
-- 减少数据库查询压力
+- Ant Design Charts 支持主题配置
+- 可以集成 UnoCSS 颜色系统
+- 响应式设计支持良好
 
-### 数据库优化
+**决策**: 创建统一的图表主题配置
 
-**Decision**: 异步数据库操作 + 连接池
+**理由**:
 
-**Rationale**:
+- 保持视觉一致性
+- 便于主题切换
+- 减少样式冲突
 
-- 异步操作避免阻塞事件循环
-- 连接池提高数据库连接效率
-- 索引优化复杂查询性能
+## 技术决策总结
 
-## 部署架构
+### 主要技术栈
 
-**Decision**: Docker + Docker Compose
+- **新图表库**: `@ant-design/charts-vue`
+- **集成方式**: 直接组件替换 + 数据适配器
+- **样式方案**: 统一主题配置
+- **测试策略**: 组件级测试 + 可视化回归测试
 
-**Rationale**:
+### 迁移策略
 
-- 容器化确保环境一致性
-- 简化部署和扩展流程
-- 支持开发、测试、生产环境统一
+1. **渐进式迁移**: 逐个组件迁移，确保每个组件功能完整
+2. **功能对等**: 保持现有功能不变，仅替换底层实现
+3. **数据兼容**: 保持现有数据结构，仅调整数据访问方式
+4. **样式一致**: 确保视觉样式与现有 UI 保持一致
 
-**Components**:
+### 风险评估
 
-- 后端 API 服务
-- 前端 Web 应用
-- PostgreSQL 数据库
-- Redis 缓存和消息队列
-- Celery Worker 进程
+- **低风险**: 组件 API 相对简单，迁移复杂度可控
+- **中风险**: 交互功能需要仔细测试
+- **低风险**: 数据格式转换有明确的映射关系
 
-## 监控和日志
+## 后续步骤
 
-**Decision**: 结构化日志 + Prometheus + Grafana
-
-**Rationale**:
-
-- 结构化日志便于分析和故障排查
-- Prometheus 提供系统指标监控
-- Grafana 提供可视化监控面板
-
-## 安全考虑
-
-**Decision**: API 认证 + 数据加密 + 输入验证
-
-**Rationale**:
-
-- 金融数据需要严格的安全保护
-- 防止恶意输入和攻击
-- 确保数据完整性和隐私性
-
-## 待澄清问题
-
-1. **数据源集成**: 需要确定股票数据源 API 和更新频率
-2. **模型训练**: 需要确定模型训练流程和频率
-3. **实时决策**: 需要确定决策延迟要求和实时性保证
-4. **回测验证**: 需要确定回测数据范围和验证标准
+1. 创建数据模型文档
+2. 定义 API 契约
+3. 制定详细的迁移计划
+4. 创建快速开始指南

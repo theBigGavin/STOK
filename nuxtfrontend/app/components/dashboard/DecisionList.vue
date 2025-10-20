@@ -10,14 +10,8 @@
           <UBadge v-if="hasHighRiskDecisions" color="error" variant="subtle" class="text-xs">
             高风险
           </UBadge>
-          <UButton
-            icon="i-lucide-refresh-cw"
-            color="neutral"
-            variant="ghost"
-            size="sm"
-            :loading="loading"
-            @click="refresh"
-          >
+          <UButton icon="i-lucide-refresh-cw" color="neutral" variant="ghost" size="sm" :loading="loading"
+            @click="refresh">
             刷新
           </UButton>
         </div>
@@ -38,19 +32,13 @@
 
       <!-- 决策列表 -->
       <div v-else class="space-y-3">
-        <div
-          v-for="decision in decisions"
-          :key="`${decision.symbol}-${decision.timestamp}`"
-          class="flex items-center justify-between p-3 rounded-lg border border-default hover:bg-elevated transition-colors"
-        >
+        <div v-for="decision in decisions" :key="`${decision.symbol}-${decision.timestamp}`"
+          class="flex items-center justify-between p-3 rounded-lg border border-default hover:bg-elevated transition-colors">
           <div class="flex items-center gap-3">
             <!-- 决策类型图标 -->
             <div class="p-2 rounded-full" :class="decisionColorClasses(decision.decision)">
-              <UIcon
-                :name="decisionIcon(decision.decision)"
-                class="size-4"
-                :class="decisionIconColor(decision.decision)"
-              />
+              <UIcon :name="decisionIcon(decision.decision)" class="size-4"
+                :class="decisionIconColor(decision.decision)" />
             </div>
 
             <!-- 股票信息 -->
@@ -77,23 +65,13 @@
                 <span>置信度</span>
                 <span>{{ decision.confidence.toFixed(1) }}%</span>
               </div>
-              <UProgress
-                :value="decision.confidence"
-                :max="100"
-                size="xs"
-                :color="confidenceColor(decision.confidence)"
-              />
+              <UProgress :value="decision.confidence" :max="100" size="xs"
+                :color="confidenceColor(decision.confidence)" />
             </div>
 
             <!-- 查看详情按钮 -->
-            <UButton
-              icon="i-lucide-eye"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              class="rounded-full"
-              @click="viewDecision(decision)"
-            />
+            <UButton icon="i-lucide-eye" color="neutral" variant="ghost" size="sm" class="rounded-full"
+              @click="viewDecision(decision)" />
           </div>
         </div>
       </div>
@@ -111,13 +89,14 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { useDashboardData } from '~/composables/useDashboardData';
+import type { DecisionType, RiskLevel } from '~/types/decisions';
 
 interface DashboardDecision {
   symbol: string;
-  decision: 'BUY' | 'SELL' | 'HOLD';
+  decision: DecisionType;
   confidence: number;
   timestamp: string;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  riskLevel: RiskLevel;
 }
 
 const {
@@ -150,65 +129,65 @@ const viewDecision = (decision: DashboardDecision) => {
   // 这里可以添加路由跳转逻辑
 };
 
-const decisionColorClasses = (decision: string) => {
+const decisionColorClasses = (decision: DecisionType) => {
   switch (decision) {
-    case 'BUY':
+    case 'buy':
       return 'bg-success/10';
-    case 'SELL':
+    case 'sell':
       return 'bg-error/10';
-    case 'HOLD':
+    case 'hold':
       return 'bg-warning/10';
     default:
       return 'bg-neutral/10';
   }
 };
 
-const decisionIcon = (decision: string) => {
+const decisionIcon = (decision: DecisionType) => {
   switch (decision) {
-    case 'BUY':
+    case 'buy':
       return 'i-lucide-trending-up';
-    case 'SELL':
+    case 'sell':
       return 'i-lucide-trending-down';
-    case 'HOLD':
+    case 'hold':
       return 'i-lucide-minus';
     default:
       return 'i-lucide-help-circle';
   }
 };
 
-const decisionIconColor = (decision: string) => {
+const decisionIconColor = (decision: DecisionType) => {
   switch (decision) {
-    case 'BUY':
+    case 'buy':
       return 'text-success';
-    case 'SELL':
+    case 'sell':
       return 'text-error';
-    case 'HOLD':
+    case 'hold':
       return 'text-warning';
     default:
       return 'text-neutral';
   }
 };
 
-const riskLevelColor = (riskLevel: string) => {
+const riskLevelColor = (riskLevel: RiskLevel) => {
   switch (riskLevel) {
-    case 'LOW':
+    case 'low':
       return 'success';
-    case 'MEDIUM':
+    case 'medium':
       return 'warning';
-    case 'HIGH':
+    case 'high':
       return 'error';
     default:
       return 'neutral';
   }
 };
 
-const riskLevelText = (riskLevel: string) => {
+const riskLevelText = (riskLevel: RiskLevel) => {
   switch (riskLevel) {
-    case 'LOW':
+    case 'low':
       return '低风险';
-    case 'MEDIUM':
+    case 'medium':
       return '中风险';
-    case 'HIGH':
+    case 'high':
       return '高风险';
     default:
       return '未知';

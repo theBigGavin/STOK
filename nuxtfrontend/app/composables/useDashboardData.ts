@@ -1,6 +1,7 @@
 /**
  * 仪表盘数据管理组合式函数
  * 提供仪表盘页面所需的数据获取、状态管理和实时更新功能
+ * 重构版本：修复类型安全问题、代码重复和设计问题
  */
 
 import { ref, computed, onUnmounted } from 'vue';
@@ -8,14 +9,34 @@ import { useStockStore } from '~/stores/stocks';
 import { useDecisionStore } from '~/stores/decisions';
 import { useModelStore } from '~/stores/models';
 import { useCachedHealthApi } from '~/api/health';
+import type { DecisionType, RiskLevel } from '~/types/decisions';
+import type { APIStatus } from '~/types/api';
 
-// 使用本地定义的类型，因为API文件中的类型是接口定义
+// 使用类型安全的枚举定义
+const SystemStatus = {
+  HEALTHY: 'healthy',
+  DEGRADED: 'degraded',
+  UNHEALTHY: 'unhealthy'
+} as const;
+
+export type SystemStatus = typeof SystemStatus[keyof typeof SystemStatus];
+
+const StatusColor = {
+  SUCCESS: 'success',
+  WARNING: 'warning',
+  ERROR: 'error',
+  NEUTRAL: 'neutral'
+} as const;
+
+export type StatusColor = typeof StatusColor[keyof typeof StatusColor];
+
+// 使用导入的类型定义
 interface HealthCheckResponse {
-  status: 'healthy' | 'degraded' | 'unhealthy';
+  status: SystemStatus;
   timestamp: string;
   services: {
     [key: string]: {
-      status: 'healthy' | 'degraded' | 'unhealthy';
+      status: SystemStatus;
       responseTime?: number;
       message?: string;
       lastChecked: string;
@@ -56,7 +77,7 @@ interface DashboardStats {
   activeStocks: number;
   totalModels: number;
   decisionSuccessRate: number;
-  systemStatus: 'healthy' | 'degraded' | 'unhealthy';
+  systemStatus: SystemStatus;
   totalDecisions: number;
   avgConfidence: number;
   systemUptime: number;
@@ -66,10 +87,10 @@ interface DashboardStats {
 // 实时决策数据类型
 interface RealTimeDecision {
   symbol: string;
-  decision: 'BUY' | 'SELL' | 'HOLD';
+  decision: DecisionType;
   confidence: number;
   timestamp: string;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  riskLevel: RiskLevel;
 }
 
 // 模型性能数据类型
@@ -82,6 +103,28 @@ interface ModelPerformanceData {
   winRate: number;
   lastUpdated: string;
 }
+
+// 默认性能数据
+const DEFAULT_MODEL_PERFORMANCE: ModelPerformanceData[] = [
+  {
+    modelId: 'default-1',
+    modelName: '技术指标模型',
+    accuracy: 78.5,
+    totalReturn: 12.3,
+    sharpeRatio: 1.8,
+    winRate: 72.1,
+    lastUpdated: new Date().toISOString(),
+  },
+  {
+    modelId: 'default-2',
+    modelName: '机器学习模型',
+    accuracy: 82.3,
+    totalReturn: 15.7,
+    sharpeRatio: 2.1,
+    winRate: 75.4,
+    lastUpdated: new Date().toISOString(),
+  },
+];
 
 /**
  * 仪表盘数据管理组合式函数
@@ -103,7 +146,7 @@ export const useDashboardData = () => {
     activeStocks: 0,
     totalModels: 0,
     decisionSuccessRate: 0,
-    systemStatus: 'healthy',
+    systemStatus: SystemStatus.HEALTHY,
     totalDecisions: 0,
     avgConfidence: 0,
     systemUptime: 0,
@@ -115,41 +158,60 @@ export const useDashboardData = () => {
   const systemHealth = ref<HealthCheckResponse | null>(null);
   const performanceMetrics = ref<PerformanceMetrics | null>(null);
 
+  // 辅助函数
+  const mapDecisionType = (decision: string): DecisionType => {
+    switch (decision.toLowerCase()) {
+      case 'buy': return 'buy';
+      case 'sell': return 'sell';
+      case 'hold': return 'hold';
+      default: return 'hold';
+    }
+  };
+
+  const mapRiskLevel = (riskLevel: string): RiskLevel => {
+    switch (riskLevel.toLowerCase()) {
+      case 'low': return 'low';
+      case 'medium': return 'medium';
+      case 'high': return 'high';
+      default: return 'medium';
+    }
+  };
+
   // 计算属性
   const computedState = {
     // 系统状态颜色
-    systemStatusColor: computed(() => {
+    systemStatusColor: computed((): StatusColor => {
       switch (dashboardStats.value.systemStatus) {
-        case 'healthy':
-          return 'success';
-        case 'degraded':
-          return 'warning';
-        case 'unhealthy':
-          return 'error';
+        case SystemStatus.HEALTHY:
+          return StatusColor.SUCCESS;
+        case SystemStatus.DEGRADED:
+          return StatusColor.WARNING;
+        case SystemStatus.UNHEALTHY:
+          return StatusColor.ERROR;
         default:
-          return 'neutral';
+          return StatusColor.NEUTRAL;
       }
     }),
 
     // 决策成功率颜色
-    successRateColor: computed(() => {
+    successRateColor: computed((): StatusColor => {
       const rate = dashboardStats.value.decisionSuccessRate;
-      if (rate >= 80) return 'success';
-      if (rate >= 60) return 'warning';
-      return 'error';
+      if (rate >= 80) return StatusColor.SUCCESS;
+      if (rate >= 60) return StatusColor.WARNING;
+      return StatusColor.ERROR;
     }),
 
     // 内存使用率颜色
-    memoryUsageColor: computed(() => {
+    memoryUsageColor: computed((): StatusColor => {
       const usage = dashboardStats.value.memoryUsage;
-      if (usage < 70) return 'success';
-      if (usage < 85) return 'warning';
-      return 'error';
+      if (usage < 70) return StatusColor.SUCCESS;
+      if (usage < 85) return StatusColor.WARNING;
+      return StatusColor.ERROR;
     }),
 
     // 是否有高风险决策
     hasHighRiskDecisions: computed(() =>
-      realTimeDecisions.value.some(decision => decision.riskLevel === 'HIGH')
+      realTimeDecisions.value.some(decision => decision.riskLevel === 'high')
     ),
 
     // 性能趋势
@@ -249,7 +311,7 @@ export const useDashboardData = () => {
         dashboardStats.value.memoryUsage = health.system.memoryUsage;
       } catch (err) {
         console.error('加载系统健康状态失败:', err);
-        dashboardStats.value.systemStatus = 'unhealthy';
+        dashboardStats.value.systemStatus = SystemStatus.UNHEALTHY;
       }
     },
 
@@ -262,16 +324,23 @@ export const useDashboardData = () => {
         const recentDecisions = await decisionStore.fetchRecentDecisions(10, 0);
 
         if (recentDecisions && recentDecisions.length > 0) {
-          realTimeDecisions.value = recentDecisions;
+          // API返回的数据已经是正确的格式，直接使用
+          realTimeDecisions.value = recentDecisions.map(decision => ({
+            symbol: decision.symbol,
+            decision: mapDecisionType(decision.decision),
+            confidence: decision.confidence,
+            timestamp: decision.timestamp,
+            riskLevel: mapRiskLevel(decision.riskLevel),
+          }));
         } else {
           // 如果API返回空数据，使用store中的现有数据作为后备
           const fallbackDecisions = decisionStore.recentDecisions.slice(0, 10);
           realTimeDecisions.value = fallbackDecisions.map(decision => ({
             symbol: decision.symbol,
-            decision: decision.finalDecision.decision,
+            decision: mapDecisionType(decision.finalDecision.decision),
             confidence: decision.finalDecision.confidence,
             timestamp: decision.timestamp,
-            riskLevel: decision.riskAssessment.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH',
+            riskLevel: mapRiskLevel(decision.riskAssessment.riskLevel),
           }));
         }
       } catch (err) {
@@ -280,10 +349,10 @@ export const useDashboardData = () => {
         const fallbackDecisions = decisionStore.recentDecisions.slice(0, 10);
         realTimeDecisions.value = fallbackDecisions.map(decision => ({
           symbol: decision.symbol,
-          decision: decision.finalDecision.decision,
+          decision: mapDecisionType(decision.finalDecision.decision),
           confidence: decision.finalDecision.confidence,
           timestamp: decision.timestamp,
-          riskLevel: decision.riskAssessment.riskLevel as 'LOW' | 'MEDIUM' | 'HIGH',
+          riskLevel: mapRiskLevel(decision.riskAssessment.riskLevel),
         }));
       }
     },

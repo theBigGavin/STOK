@@ -363,5 +363,266 @@ class DecisionEngineManager:
             return 0
 
 
+    async def analyze_decision_points(self, stock_id: str, start_date: date, end_date: date) -> Dict[str, Any]:
+        """分析决策点"""
+        try:
+            # 获取股票信息
+            stock = await self.stock_service.get_stock_by_id(stock_id)
+            if not stock:
+                raise ValueError(f"股票 {stock_id} 不存在")
+            
+            # 获取价格数据
+            stock_prices = await self.stock_service.get_stock_prices(stock_id, start_date, end_date)
+            if not stock_prices:
+                return {
+                    'stock': stock,
+                    'decision_points': [],
+                    'summary': {
+                        'total_decisions': 0,
+                        'buy_decisions': 0,
+                        'sell_decisions': 0,
+                        'hold_decisions': 0,
+                        'avg_confidence': 0
+                    }
+                }
+            
+            # 获取该时间段内的决策
+            decisions = await self.stock_service.get_decisions_by_stock_and_date_range(
+                stock_id, start_date, end_date
+            )
+            
+            # 分析决策点
+            decision_points = []
+            for decision in decisions:
+                # 获取投票结果
+                vote_results = await self.stock_service.get_vote_results_for_decision(decision.id)
+                
+                # 计算决策点前后的价格变化
+                price_changes = await self._calculate_decision_price_changes(decision, stock_prices)
+                
+                decision_points.append({
+                    'decision': decision,
+                    'vote_results': vote_results,
+                    'vote_summary': {
+                        'total_votes': len(vote_results),
+                        'buy_votes': len([v for v in vote_results if v.vote_type == DecisionType.BUY]),
+                        'sell_votes': len([v for v in vote_results if v.vote_type == DecisionType.SELL]),
+                        'hold_votes': len([v for v in vote_results if v.vote_type == DecisionType.HOLD]),
+                        'avg_confidence': sum(v.confidence for v in vote_results) / len(vote_results) if vote_results else 0
+                    },
+                    'price_changes': price_changes,
+                    'performance': await self._calculate_decision_performance(decision, price_changes)
+                })
+            
+            # 计算汇总统计
+            summary = {
+                'total_decisions': len(decision_points),
+                'buy_decisions': len([d for d in decision_points if d['decision'].decision_type == DecisionType.BUY]),
+                'sell_decisions': len([d for d in decision_points if d['decision'].decision_type == DecisionType.SELL]),
+                'hold_decisions': len([d for d in decision_points if d['decision'].decision_type == DecisionType.HOLD]),
+                'avg_confidence': sum(d['decision'].confidence for d in decision_points) / len(decision_points) if decision_points else 0,
+                'success_rate': self._calculate_success_rate(decision_points)
+            }
+            
+            return {
+                'stock': stock,
+                'decision_points': decision_points,
+                'summary': summary
+            }
+            
+        except Exception as e:
+            print(f"分析决策点失败: {e}")
+            raise
+
+    async def _calculate_decision_price_changes(self, decision: Decision, stock_prices: List) -> Dict[str, float]:
+        """计算决策点前后的价格变化"""
+        decision_date = decision.generated_at.date()
+        
+        # 找到决策日期的价格
+        decision_price = None
+        for price in stock_prices:
+            if price.date == decision_date:
+                decision_price = price.close_price
+                break
+        
+        if not decision_price:
+            return {}
+        
+        # 计算前后时间段的价格变化
+        price_changes = {}
+        
+        # 决策后1天
+        next_day_price = self._find_price_after_days(stock_prices, decision_date, 1)
+        if next_day_price:
+            price_changes['next_day_change'] = (next_day_price - decision_price) / decision_price
+        
+        # 决策后1周
+        week_price = self._find_price_after_days(stock_prices, decision_date, 7)
+        if week_price:
+            price_changes['week_change'] = (week_price - decision_price) / decision_price
+        
+        # 决策后1月
+        month_price = self._find_price_after_days(stock_prices, decision_date, 30)
+        if month_price:
+            price_changes['month_change'] = (month_price - decision_price) / decision_price
+        
+        # 决策后3月
+        quarter_price = self._find_price_after_days(stock_prices, decision_date, 90)
+        if quarter_price:
+            price_changes['quarter_change'] = (quarter_price - decision_price) / decision_price
+        
+        return price_changes
+
+    def _find_price_after_days(self, stock_prices: List, start_date: date, days: int) -> Optional[float]:
+        """查找指定天数后的价格"""
+        target_date = start_date + timedelta(days=days)
+        
+        # 找到目标日期或之后最近的价格
+        for price in stock_prices:
+            if price.date >= target_date:
+                return price.close_price
+        
+        return None
+
+    async def _calculate_decision_performance(self, decision: Decision, price_changes: Dict[str, float]) -> Dict[str, Any]:
+        """计算决策性能"""
+        performance = {
+            'is_correct': False,
+            'accuracy_score': 0.0,
+            'profitability': 0.0
+        }
+        
+        if not price_changes:
+            return performance
+        
+        # 使用1周变化作为主要性能指标
+        week_change = price_changes.get('week_change', 0)
+        
+        # 判断决策是否正确
+        if decision.decision_type == DecisionType.BUY:
+            performance['is_correct'] = week_change > 0
+            performance['profitability'] = week_change
+        elif decision.decision_type == DecisionType.SELL:
+            performance['is_correct'] = week_change < 0
+            performance['profitability'] = -week_change  # 卖出决策的盈利是价格下跌
+        else:  # HOLD
+            performance['is_correct'] = abs(week_change) < 0.02  # 持有决策正确如果价格变化不大
+            performance['profitability'] = 0
+        
+        # 计算准确度分数（置信度 * 正确性）
+        performance['accuracy_score'] = decision.confidence if performance['is_correct'] else (1 - decision.confidence)
+        
+        return performance
+
+    def _calculate_success_rate(self, decision_points: List[Dict]) -> float:
+        """计算决策成功率"""
+        if not decision_points:
+            return 0.0
+        
+        correct_decisions = sum(1 for d in decision_points if d['performance']['is_correct'])
+        return correct_decisions / len(decision_points)
+
+    async def get_decision_timeline(self, stock_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """获取决策时间线"""
+        try:
+            # 获取最近的决策
+            decisions = await self.stock_service.get_decisions_by_stock(stock_id, limit)
+            
+            timeline = []
+            for decision in decisions:
+                # 获取投票结果
+                vote_results = await self.stock_service.get_vote_results_for_decision(decision.id)
+                
+                timeline.append({
+                    'decision': decision,
+                    'vote_summary': {
+                        'total_votes': len(vote_results),
+                        'buy_votes': len([v for v in vote_results if v.vote_type == DecisionType.BUY]),
+                        'sell_votes': len([v for v in vote_results if v.vote_type == DecisionType.SELL]),
+                        'hold_votes': len([v for v in vote_results if v.vote_type == DecisionType.HOLD])
+                    },
+                    'timestamp': decision.generated_at
+                })
+            
+            return timeline
+            
+        except Exception as e:
+            print(f"获取决策时间线失败: {e}")
+            return []
+
+    async def get_decision_insights(self, stock_id: str) -> Dict[str, Any]:
+        """获取决策洞察"""
+        try:
+            # 获取所有决策
+            decisions = await self.stock_service.get_decisions_by_stock(stock_id, 100)
+            
+            if not decisions:
+                return {
+                    'total_decisions': 0,
+                    'insights': []
+                }
+            
+            insights = []
+            
+            # 分析决策模式
+            buy_decisions = [d for d in decisions if d.decision_type == DecisionType.BUY]
+            sell_decisions = [d for d in decisions if d.decision_type == DecisionType.SELL]
+            hold_decisions = [d for d in decisions if d.decision_type == DecisionType.HOLD]
+            
+            # 洞察1: 决策分布
+            insights.append({
+                'type': 'decision_distribution',
+                'title': '决策分布',
+                'description': f'买入决策: {len(buy_decisions)}, 卖出决策: {len(sell_decisions)}, 持有决策: {len(hold_decisions)}',
+                'data': {
+                    'buy': len(buy_decisions),
+                    'sell': len(sell_decisions),
+                    'hold': len(hold_decisions)
+                }
+            })
+            
+            # 洞察2: 平均置信度
+            avg_confidence = sum(d.confidence for d in decisions) / len(decisions)
+            insights.append({
+                'type': 'confidence_analysis',
+                'title': '置信度分析',
+                'description': f'平均决策置信度: {avg_confidence:.2f}',
+                'data': {
+                    'avg_confidence': avg_confidence,
+                    'max_confidence': max(d.confidence for d in decisions),
+                    'min_confidence': min(d.confidence for d in decisions)
+                }
+            })
+            
+            # 洞察3: 决策频率
+            if len(decisions) > 1:
+                dates = [d.generated_at for d in decisions]
+                dates.sort()
+                time_spans = [(dates[i+1] - dates[i]).days for i in range(len(dates)-1)]
+                avg_frequency = sum(time_spans) / len(time_spans)
+                
+                insights.append({
+                    'type': 'decision_frequency',
+                    'title': '决策频率',
+                    'description': f'平均每 {avg_frequency:.1f} 天生成一次决策',
+                    'data': {
+                        'avg_frequency_days': avg_frequency,
+                        'total_period_days': (dates[-1] - dates[0]).days
+                    }
+                })
+            
+            return {
+                'total_decisions': len(decisions),
+                'insights': insights
+            }
+            
+        except Exception as e:
+            print(f"获取决策洞察失败: {e}")
+            return {
+                'total_decisions': 0,
+                'insights': []
+            }
+
+
 # 全局决策引擎管理器实例（需要在使用时传入session）
 # decision_engine_manager = DecisionEngineManager()

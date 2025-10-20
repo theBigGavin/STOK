@@ -484,3 +484,224 @@ async def get_recent_decisions(
         logger.error(f"获取最近决策列表失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取最近决策列表失败: {str(e)}")
 
+
+@router.get("/decisions/{decision_id}", response_model=APIResponse)
+async def get_decision_details(
+    decision_id: str,
+    session: AsyncSession = Depends(get_db_session)
+):
+    """获取决策详情"""
+    try:
+        logger.info(f"获取决策详情请求: decision_id={decision_id}")
+        
+        # 创建决策引擎管理器
+        decision_manager = DecisionEngineManager(session)
+        
+        # 获取决策详情
+        decision_details = await decision_manager.get_decision_details(decision_id)
+        
+        if not decision_details:
+            raise HTTPException(status_code=404, detail=f"决策 {decision_id} 不存在")
+        
+        # 格式化响应数据
+        formatted_details = {
+            'decision': {
+                'id': str(decision_details['decision'].id),
+                'decision_type': decision_details['decision'].decision_type,
+                'confidence': float(decision_details['decision'].confidence) if decision_details['decision'].confidence else 0.0,
+                'target_price': float(decision_details['decision'].target_price) if decision_details['decision'].target_price else None,
+                'stop_loss_price': float(decision_details['decision'].stop_loss_price) if decision_details['decision'].stop_loss_price else None,
+                'time_horizon': decision_details['decision'].time_horizon,
+                'reasoning': decision_details['decision'].reasoning,
+                'generated_at': decision_details['decision'].generated_at.isoformat() if decision_details['decision'].generated_at else None,
+                'expires_at': decision_details['decision'].expires_at.isoformat() if decision_details['decision'].expires_at else None
+            },
+            'stock': {
+                'id': str(decision_details['stock'].id),
+                'symbol': decision_details['stock'].symbol,
+                'name': decision_details['stock'].name,
+                'market': decision_details['stock'].market,
+                'current_price': float(decision_details['stock'].current_price) if decision_details['stock'].current_price else None,
+                'price_change_percent': float(decision_details['stock'].price_change_percent) if decision_details['stock'].price_change_percent else None,
+                'industry': decision_details['stock'].industry
+            },
+            'vote_summary': decision_details['vote_summary'],
+            'model_details': [
+                {
+                    'model': {
+                        'id': str(model_detail['model'].id),
+                        'name': model_detail['model'].name,
+                        'model_type': model_detail['model'].model_type,
+                        'description': model_detail['model'].description,
+                        'weight': float(model_detail['model'].weight) if model_detail['model'].weight else 1.0
+                    },
+                    'vote': {
+                        'vote_type': model_detail['vote'].vote_type,
+                        'confidence': float(model_detail['vote'].confidence) if model_detail['vote'].confidence else 0.0,
+                        'signal_strength': float(model_detail['vote'].signal_strength) if model_detail['vote'].signal_strength else 0.0,
+                        'reasoning': model_detail['vote'].reasoning
+                    }
+                }
+                for model_detail in decision_details['model_details']
+            ]
+        }
+        
+        logger.info(f"成功获取决策详情: {decision_id}")
+        
+        return APIResponse(
+            data=formatted_details,
+            message="获取决策详情成功",
+            status="success"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取决策详情失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"获取决策详情失败: {str(e)}")
+
+
+@router.get("/decisions/stock/{stock_id}/analysis", response_model=APIResponse)
+async def analyze_decision_points(
+    stock_id: str,
+    start_date: str = Query(..., description="开始日期 (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="结束日期 (YYYY-MM-DD)"),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """分析决策点"""
+    try:
+        logger.info(f"分析决策点请求: stock_id={stock_id}, start_date={start_date}, end_date={end_date}")
+        
+        # 解析日期
+        try:
+            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="日期格式错误，请使用 YYYY-MM-DD 格式")
+        
+        # 验证日期范围
+        if start_date_obj >= end_date_obj:
+            raise HTTPException(status_code=400, detail="开始日期必须早于结束日期")
+        
+        # 创建决策引擎管理器
+        decision_manager = DecisionEngineManager(session)
+        
+        # 分析决策点
+        analysis_result = await decision_manager.analyze_decision_points(
+            stock_id, start_date_obj, end_date_obj
+        )
+        
+        # 格式化响应数据
+        formatted_analysis = {
+            'stock': {
+                'id': str(analysis_result['stock'].id),
+                'symbol': analysis_result['stock'].symbol,
+                'name': analysis_result['stock'].name,
+                'market': analysis_result['stock'].market
+            },
+            'summary': analysis_result['summary'],
+            'decision_points': [
+                {
+                    'decision': {
+                        'id': str(dp['decision'].id),
+                        'decision_type': dp['decision'].decision_type,
+                        'confidence': float(dp['decision'].confidence) if dp['decision'].confidence else 0.0,
+                        'generated_at': dp['decision'].generated_at.isoformat() if dp['decision'].generated_at else None
+                    },
+                    'vote_summary': dp['vote_summary'],
+                    'price_changes': dp['price_changes'],
+                    'performance': dp['performance']
+                }
+                for dp in analysis_result['decision_points']
+            ]
+        }
+        
+        logger.info(f"成功分析决策点: {stock_id}, 找到 {len(formatted_analysis['decision_points'])} 个决策点")
+        
+        return APIResponse(
+            data=formatted_analysis,
+            message="分析决策点成功",
+            status="success"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"分析决策点失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"分析决策点失败: {str(e)}")
+
+
+@router.get("/decisions/stock/{stock_id}/timeline", response_model=APIResponse)
+async def get_decision_timeline(
+    stock_id: str,
+    limit: int = Query(50, ge=1, le=100, description="时间线数量限制"),
+    session: AsyncSession = Depends(get_db_session)
+):
+    """获取决策时间线"""
+    try:
+        logger.info(f"获取决策时间线请求: stock_id={stock_id}, limit={limit}")
+        
+        # 创建决策引擎管理器
+        decision_manager = DecisionEngineManager(session)
+        
+        # 获取决策时间线
+        timeline = await decision_manager.get_decision_timeline(stock_id, limit)
+        
+        # 格式化响应数据
+        formatted_timeline = [
+            {
+                'decision': {
+                    'id': str(item['decision'].id),
+                    'decision_type': item['decision'].decision_type,
+                    'confidence': float(item['decision'].confidence) if item['decision'].confidence else 0.0,
+                    'generated_at': item['decision'].generated_at.isoformat() if item['decision'].generated_at else None
+                },
+                'vote_summary': item['vote_summary'],
+                'timestamp': item['timestamp'].isoformat() if item['timestamp'] else None
+            }
+            for item in timeline
+        ]
+        
+        logger.info(f"成功获取决策时间线: {stock_id}, 共 {len(formatted_timeline)} 条记录")
+        
+        return APIResponse(
+            data=formatted_timeline,
+            message="获取决策时间线成功",
+            status="success"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取决策时间线失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"获取决策时间线失败: {str(e)}")
+
+
+@router.get("/decisions/stock/{stock_id}/insights", response_model=APIResponse)
+async def get_decision_insights(
+    stock_id: str,
+    session: AsyncSession = Depends(get_db_session)
+):
+    """获取决策洞察"""
+    try:
+        logger.info(f"获取决策洞察请求: stock_id={stock_id}")
+        
+        # 创建决策引擎管理器
+        decision_manager = DecisionEngineManager(session)
+        
+        # 获取决策洞察
+        insights = await decision_manager.get_decision_insights(stock_id)
+        
+        logger.info(f"成功获取决策洞察: {stock_id}, 共 {len(insights['insights'])} 个洞察")
+        
+        return APIResponse(
+            data=insights,
+            message="获取决策洞察成功",
+            status="success"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取决策洞察失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"获取决策洞察失败: {str(e)}")

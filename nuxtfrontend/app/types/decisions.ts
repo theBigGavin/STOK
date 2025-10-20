@@ -215,3 +215,30 @@ export interface RecentDecision {
   timestamp: string;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
 }
+
+// 决策类型枚举
+export const DecisionType = {
+  BUY: 'buy',
+  SELL: 'sell',
+  HOLD: 'hold'
+} as const;
+
+export type DecisionType = typeof DecisionType[keyof typeof DecisionType];
+
+// 风险等级枚举
+export const RiskLevel = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high'
+} as const;
+
+export type RiskLevel = typeof RiskLevel[keyof typeof RiskLevel];
+
+// 模型类型枚举
+export const ModelType = {
+  TECHNICAL: 'technical',
+  FUNDAMENTAL: 'fundamental',
+  MACHINE_LEARNING: 'machine_learning'
+} as const;
+
+export type ModelType = typeof ModelType[keyof typeof ModelType];

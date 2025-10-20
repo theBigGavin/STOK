@@ -1,11 +1,18 @@
 ---
-description: "Task list for 股票 AI 策略回测决策系统"
+description: "Task list for 股票 AI 策略回测决策系统（含图表库迁移）"
 ---
 
-# Tasks: 股票 AI 策略回测决策系统
+# Tasks: 股票 AI 策略回测决策系统（含图表库迁移）
 
 **Input**: Design documents from `/specs/001-stock-ai-decision-system/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+
+**Constitution Compliance**: All tasks MUST comply with the project constitution. Key compliance checkpoints:
+
+- ✅ Code Quality Standards: PEP 8, Vue 3 Composition API, async database operations
+- ✅ Testing Standards: PostgreSQL test database, coverage targets (backend ≥80%, frontend ≥70%)
+- ✅ Performance Requirements: API <200ms, charts <100ms, concurrent users ≥1000
+- ✅ User Experience: Responsive design, error handling, visual consistency
 
 **Tests**: Tests are MANDATORY per Constitution Testing Standards. All features must include appropriate tests with coverage targets: backend ≥80%, frontend ≥70%.
 
@@ -17,189 +24,255 @@ description: "Task list for 股票 AI 策略回测决策系统"
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 
-## Phase 1: Setup (Shared Infrastructure)
+## Path Conventions
 
-**Purpose**: Project initialization and basic structure
+- **Backend**: `backend/src/`, `backend/tests/`
+- **Frontend**: `nuxtfrontend/app/`, `nuxtfrontend/tests/`
+- **Database**: `data/migrations/`
+- **Configuration**: `backend/.env.*`, `nuxtfrontend/.env.*`
 
-- [ ] T001 Create project structure per implementation plan in backend/src/ and nuxtfrontend/app/
-- [ ] T002 Initialize Python backend with FastAPI dependencies in backend/requirements.txt
-- [ ] T003 Initialize Nuxt frontend with Vue 3 and TypeScript in nuxtfrontend/package.json
-- [ ] T004 [P] Configure Python linting and formatting tools in backend/
-- [ ] T005 [P] Configure TypeScript linting and formatting tools in nuxtfrontend/
-- [ ] T006 Setup Docker development environment with docker-compose.dev.yml
-- [ ] T007 Configure environment variables in backend/.env.example and nuxtfrontend/.env.example
+## Phase 1: Infrastructure & Setup
 
----
+**Purpose**: 项目基础设施和开发环境设置
 
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
-
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
-
-- [ ] T008 Setup PostgreSQL database schema and migrations in data/migrations/init_database.sql
-- [ ] T009 [P] Implement database models for core entities in backend/src/models/database.py
-- [ ] T010 [P] Configure Redis connection and caching in backend/src/config/redis_config.py
-- [ ] T011 [P] Setup FastAPI application structure and middleware in backend/src/main.py
-- [ ] T012 [P] Implement base API response format in backend/src/api/**init**.py
-- [ ] T013 [P] Create base AI model interface in backend/src/ml_models/base.py
-- [ ] T014 [P] Setup Nuxt 3 application structure in nuxtfrontend/app/app.vue
-- [ ] T015 [P] Configure Pinia store structure in nuxtfrontend/app/stores/
-- [ ] T016 [P] Create TypeScript type definitions in nuxtfrontend/app/types/
-- [ ] T017 [P] Implement API client utilities in nuxtfrontend/app/composables/api.ts
-- [ ] T018 Setup error handling and logging infrastructure in backend/src/config/validate_config.py
-- [ ] T019 Configure environment-specific settings in backend/src/config/database.py
-
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+- [ ] T001 [P] 配置后端开发环境在 backend/.env.development
+- [ ] T002 [P] 配置前端开发环境在 nuxtfrontend/.env.development
+- [ ] T003 [P] 设置 Docker 开发环境在 docker-compose.dev.yml
+- [ ] T004 [P] 配置数据库连接和迁移脚本在 backend/src/config/database.py
+- [ ] T005 [P] 配置 Redis 连接和缓存策略在 backend/src/config/redis_config.py
+- [ ] T006 [P] 设置 Celery 任务队列在 backend/src/services/tasks.py
+- [ ] T007 [P] 配置 API 认证和授权中间件在 backend/src/api/middleware.py
+- [ ] T008 [P] 创建基础数据模型在 backend/src/models/database.py
+- [ ] T009 [P] 实现数据库迁移脚本在 data/migrations/
+- [ ] T010 [P] 设置测试环境和测试数据在 backend/tests/conftest.py
+- [ ] T010A [P] 宪法合规性检查：验证基础设施配置符合宪法标准
 
 ---
 
-## Phase 3: User Story 1 - 获取 AI 选股推荐 (Priority: P1) 🎯 MVP
+## Phase 2: Core Backend Services
 
-**Goal**: 投资者能够快速获得基于多个 AI 模型的股票推荐列表，包含股票代码、推荐理由和置信度评分
+**Purpose**: 核心后端服务，必须在任何用户故事开始前完成
 
-**Independent Test**: 通过输入股票代码或市场条件，系统返回基于多个 AI 模型的推荐股票列表和置信度评分
+**⚠️ CRITICAL**: 在完成此阶段之前，不能开始任何用户故事工作
 
-### Tests for User Story 1 (MANDATORY) ⚠️
+### 股票数据服务
 
-**NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+- [ ] T011 [P] 实现股票数据服务在 backend/src/services/stock_service.py
+- [ ] T012 [P] 创建股票数据模型在 backend/src/models/stock_models.py
+- [ ] T013 [P] 实现股票数据 API 端点在 backend/src/api/stocks.py
+- [ ] T014 [P] 股票数据服务单元测试在 backend/tests/unit/test_stock_service.py
 
-- [ ] T020 [P] [US1] Contract test for stock recommendations endpoint in backend/tests/contract/test_recommendations.py
-- [ ] T021 [P] [US1] Integration test for recommendation user journey in backend/tests/integration/test_recommendations.py
-- [ ] T022 [P] [US1] Unit tests for recommendation logic in backend/tests/unit/test_recommendation_service.py
-- [ ] T023 [P] [US1] Frontend component tests for recommendation display in nuxtfrontend/tests/components/backtest/RecommendationList.test.ts
-- [ ] T024 [P] [US1] Performance test for recommendation API in backend/tests/performance/test_recommendations.py
+### AI 模型框架
 
-### Implementation for User Story 1
+- [ ] T015 [P] 实现基础模型接口在 backend/src/ml_models/base.py
+- [ ] T016 [P] 创建技术指标模型在 backend/src/ml_models/technical_models.py
+- [ ] T017 [P] 实现模型注册和管理系统在 backend/src/ml_models/**init**.py
+- [ ] T018 [P] 模型框架单元测试在 backend/tests/unit/test_ml_models.py
 
-- [x] T025 [P] [US1] Create Stock model in backend/src/models/stock_models.py
-- [x] T026 [P] [US1] Create AIModel model in backend/src/models/database.py
-- [x] T027 [P] [US1] Create Decision model in backend/src/models/database.py
-- [x] T028 [P] [US1] Create VoteResult model in backend/src/models/database.py
-- [x] T029 [US1] Implement StockService for data operations in backend/src/services/stock_service.py
-- [x] T030 [US1] Implement DecisionEngine for recommendation generation in backend/src/decision_engine/manager.py
-- [x] T031 [US1] Implement voting mechanism in backend/src/decision_engine/voting.py
-- [x] T032 [US1] Implement technical analysis models in backend/src/ml_models/technical_models.py
-- [x] T033 [US1] Implement recommendations API endpoint in backend/src/api/decisions.py
-- [x] T034 [US1] Create recommendation frontend component in nuxtfrontend/app/components/decisions/DecisionList.vue
-- [x] T035 [US1] Create recommendation page in nuxtfrontend/app/pages/decisions.vue
-- [x] T036 [US1] Implement recommendation store in nuxtfrontend/app/stores/recommendations.ts
-- [x] T037 [US1] Add validation and error handling for recommendations
-- [x] T038 [US1] Add logging for recommendation operations
+### 决策引擎
 
-**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
+- [ ] T019 [P] 实现决策引擎管理器在 backend/src/decision_engine/manager.py
+- [ ] T020 [P] 实现多模型投票机制在 backend/src/decision_engine/voting.py
+- [ ] T021 [P] 决策引擎单元测试在 backend/tests/unit/test_decision_engine.py
 
----
+### 回测服务
 
-## Phase 4: User Story 2 - 查看买入卖出决策点 (Priority: P1)
+- [ ] T022 [P] 实现回测服务在 backend/src/services/backtest_service.py
+- [ ] T023 [P] 回测服务单元测试在 backend/tests/unit/test_backtest_service.py
+- [ ] T023A [P] 宪法合规性检查：验证核心后端服务符合性能和质量标准
 
-**Goal**: 投资者能够查看基于历史回测结果的买入和卖出决策点图表，包含决策点和历史表现指标
-
-**Independent Test**: 通过选择特定股票和时间范围，系统显示基于回测的买入卖出决策点和历史表现
-
-### Tests for User Story 2 (MANDATORY) ⚠️
-
-- [ ] T039 [P] [US2] Contract test for decision details endpoint in backend/tests/contract/test_decisions.py
-- [ ] T040 [P] [US2] Integration test for decision point user journey in backend/tests/integration/test_decisions.py
-- [ ] T041 [P] [US2] Unit tests for decision point logic in backend/tests/unit/test_decision_service.py
-- [ ] T042 [P] [US2] Frontend component tests for decision charts in nuxtfrontend/tests/components/charts/DecisionChart.test.ts
-- [ ] T043 [P] [US2] Performance test for decision API in backend/tests/performance/test_decisions.py
-
-### Implementation for User Story 2
-
-- [ ] T044 [P] [US2] Create StockPrice model in backend/src/models/database.py
-- [ ] T045 [P] [US2] Create BacktestResult model in backend/src/models/database.py
-- [ ] T046 [US2] Implement backtest calculation service in backend/src/services/backtest_service.py
-- [ ] T047 [US2] Implement decision point analysis in backend/src/decision_engine/manager.py
-- [ ] T048 [US2] Implement decision details API endpoint in backend/src/api/decisions.py
-- [ ] T049 [US2] Create decision chart components in nuxtfrontend/app/components/charts/PriceChart.vue
-- [ ] T050 [US2] Create decision details page in nuxtfrontend/app/pages/decisions/[id].vue
-- [ ] T051 [US2] Implement decision store enhancements in nuxtfrontend/app/stores/decisions.ts
-- [ ] T052 [US2] Add time range filtering for decision points
-- [ ] T053 [US2] Add performance metrics display in nuxtfrontend/app/components/backtest/PerformanceMetrics.vue
-
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
+**Checkpoint**: 核心后端服务就绪 - 现在可以并行开始用户故事实现
 
 ---
 
-## Phase 5: User Story 3 - 多模型投票决策分析 (Priority: P2)
+## Phase 3: 获取 AI 选股推荐 (US1 - Priority: P1) 🎯 MVP
 
-**Goal**: 投资者能够了解不同 AI 模型的投票结果和权重分配，理解决策的可靠性和一致性
+**Goal**: 实现基于多个 AI 模型的股票推荐功能
 
-**Independent Test**: 通过查看特定股票的决策详情，系统显示各个模型的投票结果、权重和最终决策计算过程
+**Independent Test**: 可以独立测试通过输入股票代码或市场条件，系统返回基于多个 AI 模型的推荐股票列表和置信度评分
 
-### Tests for User Story 3 (MANDATORY) ⚠️
+### Tests for US1 (MANDATORY) ⚠️
 
-- [ ] T054 [P] [US3] Contract test for model voting endpoint in backend/tests/contract/test_models.py
-- [ ] T055 [P] [US3] Integration test for voting analysis user journey in backend/tests/integration/test_voting.py
-- [ ] T056 [P] [US3] Unit tests for voting logic in backend/tests/unit/test_voting.py
-- [ ] T057 [P] [US3] Frontend component tests for vote display in nuxtfrontend/tests/components/charts/VoteChart.test.ts
-- [ ] T058 [P] [US3] Performance test for model API in backend/tests/performance/test_models.py
+- [ ] T024 [P] [US1] 股票推荐 API 集成测试在 backend/tests/integration/test_stock_recommendations.py
+- [ ] T025 [P] [US1] 股票推荐前端组件测试在 nuxtfrontend/tests/components/stocks/StockRecommendations.test.ts
+- [ ] T026 [P] [US1] 股票推荐性能测试在 backend/tests/performance/test_recommendations.py
 
-### Implementation for User Story 3
+### Implementation for US1
 
-- [ ] T059 [P] [US3] Enhance AIModel with performance tracking in backend/src/models/database.py
-- [ ] T060 [P] [US3] Enhance VoteResult with detailed reasoning in backend/src/models/database.py
-- [ ] T061 [US3] Implement model performance tracking in backend/src/services/model_service.py
-- [ ] T062 [US3] Implement voting transparency logic in backend/src/decision_engine/voting.py
-- [ ] T063 [US3] Implement model management API in backend/src/api/models.py
-- [ ] T064 [US3] Create vote analysis components in nuxtfrontend/app/components/charts/VoteChart.vue
-- [ ] T065 [US3] Create model management page in nuxtfrontend/app/pages/models.vue
-- [ ] T066 [US3] Implement model store in nuxtfrontend/app/stores/models.ts
-- [ ] T067 [US3] Add weight configuration interface in nuxtfrontend/app/components/models/ModelConfig.vue
-- [ ] T068 [US3] Add decision reasoning display in nuxtfrontend/app/components/decisions/DecisionCard.vue
+- [ ] T027 [P] [US1] 实现股票推荐 API 端点在 backend/src/api/recommendations.py
+- [ ] T028 [P] [US1] 创建股票推荐前端组件在 nuxtfrontend/app/components/stocks/StockRecommendations.vue
+- [ ] T029 [P] [US1] 实现推荐数据模型在 backend/src/models/recommendation_models.py
+- [ ] T030 [US1] 集成股票推荐到仪表板在 nuxtfrontend/app/pages/index.vue
+- [ ] T031 [US1] 实现推荐缓存机制在 backend/src/services/cache_service.py
 
-**Checkpoint**: At this point, User Stories 1, 2 AND 3 should all work independently
+**Checkpoint**: 此时，股票推荐功能应该完全功能化并可独立测试
 
 ---
 
-## Phase 6: User Story 4 - 回测性能评估 (Priority: P3)
+## Phase 4: 查看买入卖出决策点 (US2 - Priority: P1)
 
-**Goal**: 投资者能够评估 AI 模型的历史回测表现，验证模型的可靠性和有效性
+**Goal**: 实现基于历史回测结果的买入和卖出决策点显示
 
-**Independent Test**: 通过查看模型性能报告，系统显示各个模型的历史回测指标和表现对比
+**Independent Test**: 可以独立测试通过选择特定股票和时间范围，系统显示基于回测的买入卖出决策点和历史表现
 
-### Tests for User Story 4 (MANDATORY) ⚠️
+### Tests for US2 (MANDATORY) ⚠️
 
-- [ ] T069 [P] [US4] Contract test for backtest performance endpoint in backend/tests/contract/test_backtest.py
-- [ ] T070 [P] [US4] Integration test for performance evaluation user journey in backend/tests/integration/test_backtest.py
-- [ ] T071 [P] [US4] Unit tests for backtest calculation in backend/tests/unit/test_backtest_service.py
-- [ ] T072 [P] [US4] Frontend component tests for performance charts in nuxtfrontend/tests/components/backtest/PerformanceMetrics.test.ts
-- [ ] T073 [P] [US4] Performance test for backtest API in backend/tests/performance/test_backtest.py
+- [ ] T032 [P] [US2] 决策点 API 集成测试在 backend/tests/integration/test_decisions.py
+- [ ] T033 [P] [US2] 决策点前端组件测试在 nuxtfrontend/tests/components/decisions/DecisionPoints.test.ts
+- [ ] T034 [P] [US2] 决策点可视化测试在 nuxtfrontend/tests/e2e/decision-points.spec.ts
 
-### Implementation for User Story 4
+### Implementation for US2
 
-- [ ] T074 [P] [US4] Create TradeRecord model in backend/src/models/database.py
-- [ ] T075 [US4] Implement backtest execution service in backend/src/services/backtest_service.py
-- [ ] T076 [US4] Implement performance metrics calculation in backend/src/decision_engine/manager.py
-- [ ] T077 [US4] Implement backtest API endpoint in backend/src/api/backtest.py
-- [ ] T078 [US4] Create backtest configuration component in nuxtfrontend/app/components/backtest/BacktestConfig.vue
-- [ ] T079 [US4] Create backtest results page in nuxtfrontend/app/pages/backtest.vue
-- [ ] T080 [US4] Implement backtest store in nuxtfrontend/app/stores/backtest.ts
-- [ ] T081 [US4] Add performance comparison charts in nuxtfrontend/app/components/charts/PerformanceChart.vue
-- [ ] T082 [US4] Add risk indicators in nuxtfrontend/app/components/backtest/RiskIndicator.vue
-- [ ] T083 [US4] Add equity curve visualization in nuxtfrontend/app/components/charts/EquityCurveChart.vue
+- [ ] T035 [P] [US2] 实现决策点 API 端点在 backend/src/api/decisions.py
+- [ ] T036 [P] [US2] 创建决策点前端组件在 nuxtfrontend/app/components/decisions/DecisionPoints.vue
+- [ ] T037 [P] [US2] 实现决策数据模型在 backend/src/models/decision_models.py
+- [ ] T038 [US2] 集成决策点到股票详情页面在 nuxtfrontend/app/pages/stocks/[code].vue
+- [ ] T039 [US2] 实现决策点历史数据查询在 backend/src/services/decision_service.py
 
-**Checkpoint**: All user stories should now be independently functional
+**Checkpoint**: 此时，决策点功能应该独立工作
 
 ---
 
-## Phase 7: Polish & Cross-Cutting Concerns
+## Phase 5: 多模型投票决策分析 (US3 - Priority: P2)
 
-**Purpose**: Improvements that affect multiple user stories
+**Goal**: 实现多模型投票结果和权重分配的透明展示
 
-- [ ] T084 [P] Documentation updates in docs/ for all implemented features
-- [ ] T085 Code cleanup and refactoring across all modules
-- [ ] T086 Performance optimization across all API endpoints
-- [ ] T087 [P] Additional unit tests for edge cases in backend/tests/unit/
-- [ ] T088 Security hardening and input validation enhancements
-- [ ] T089 Run quickstart.md validation scenarios
-- [ ] T090 Code coverage verification (backend ≥80%, frontend ≥70%)
-- [ ] T091 Performance benchmark validation (API <200ms, frontend <3s)
-- [ ] T092 [P] Add comprehensive error handling and user feedback
-- [ ] T093 [P] Implement data caching strategies with Redis
-- [ ] T094 [P] Add monitoring and logging for production readiness
-- [ ] T095 [P] Create deployment scripts and configuration
+**Independent Test**: 可以独立测试通过查看特定股票的决策详情，系统显示各个模型的投票结果、权重和最终决策计算过程
+
+### Tests for US3 (MANDATORY) ⚠️
+
+- [ ] T040 [P] [US3] 投票分析 API 集成测试在 backend/tests/integration/test_voting_analysis.py
+- [ ] T041 [P] [US3] 投票分析前端组件测试在 nuxtfrontend/tests/components/decisions/VotingAnalysis.test.ts
+- [ ] T042 [P] [US3] 投票数据一致性测试在 backend/tests/contract/test_voting.py
+
+### Implementation for US3
+
+- [ ] T043 [P] [US3] 实现投票分析 API 端点在 backend/src/api/voting.py
+- [ ] T044 [P] [US3] 创建投票分析前端组件在 nuxtfrontend/app/components/decisions/VotingAnalysis.vue
+- [ ] T045 [P] [US3] 实现投票数据模型在 backend/src/models/voting_models.py
+- [ ] T046 [US3] 集成投票分析到决策详情页面在 nuxtfrontend/app/pages/decisions/[id].vue
+- [ ] T047 [US3] 实现权重配置界面在 nuxtfrontend/app/components/models/WeightConfig.vue
+
+**Checkpoint**: 此时，投票分析功能应该独立工作
+
+---
+
+## Phase 6: 回测性能评估 (US4 - Priority: P3)
+
+**Goal**: 实现 AI 模型历史回测表现的评估功能
+
+**Independent Test**: 可以独立测试通过查看模型性能报告，系统显示各个模型的历史回测指标和表现对比
+
+### Tests for US4 (MANDATORY) ⚠️
+
+- [ ] T048 [P] [US4] 回测性能 API 集成测试在 backend/tests/integration/test_backtest_performance.py
+- [ ] T049 [P] [US4] 回测性能前端组件测试在 nuxtfrontend/tests/components/models/PerformanceMetrics.test.ts
+- [ ] T050 [P] [US4] 回测数据准确性测试在 backend/tests/contract/test_backtest.py
+
+### Implementation for US4
+
+- [ ] T051 [P] [US4] 实现回测性能 API 端点在 backend/src/api/backtest.py
+- [ ] T052 [P] [US4] 创建回测性能前端组件在 nuxtfrontend/app/components/models/PerformanceMetrics.vue
+- [ ] T053 [P] [US4] 实现回测数据模型在 backend/src/models/backtest_models.py
+- [ ] T054 [US4] 集成回测性能到模型管理页面在 nuxtfrontend/app/pages/models.vue
+- [ ] T055 [US4] 实现性能指标计算服务在 backend/src/services/metrics_service.py
+
+**Checkpoint**: 此时，回测性能评估功能应该独立工作
+
+---
+
+## Phase 7: 图表库迁移和优化 (US5 - Priority: P2)
+
+**Goal**: 将前端图表库从 Unovis 迁移到 Ant Design Charts，提升系统集成度和维护性
+
+**Independent Test**: 可以独立测试通过加载各类图表数据，系统正确显示迁移后的图表组件，保持功能完整性和视觉一致性
+
+### Tests for US5 (MANDATORY) ⚠️
+
+- [ ] T056 [P] [US5] 安装 Ant Design Charts Vue 依赖到 nuxtfrontend/package.json
+- [ ] T057 [P] [US5] 移除 Unovis 依赖从 nuxtfrontend/package.json
+- [ ] T058 [P] [US5] 配置 Nuxt 3 集成 Ant Design Charts 在 nuxtfrontend/nuxt.config.ts
+- [ ] T059 [P] [US5] 创建图表主题配置在 nuxtfrontend/app/utils/chartTheme.ts
+- [ ] T060 [P] [US5] 创建数据转换工具在 nuxtfrontend/app/utils/chartAdapter.ts
+
+### 净值曲线图迁移
+
+- [ ] T061 [P] [US5] 净值曲线图组件单元测试在 nuxtfrontend/tests/components/charts/EquityCurveChart.test.ts
+- [ ] T062 [P] [US5] 创建净值曲线图组件在 nuxtfrontend/app/components/charts/EquityCurveChart.vue
+- [ ] T063 [P] [US5] 实现净值数据转换函数在 nuxtfrontend/app/utils/chartAdapter.ts
+
+### 性能趋势图迁移
+
+- [ ] T064 [P] [US5] 性能趋势图组件单元测试在 nuxtfrontend/tests/components/charts/PerformanceChart.test.ts
+- [ ] T065 [P] [US5] 创建性能趋势图组件在 nuxtfrontend/app/components/charts/PerformanceChart.vue
+- [ ] T066 [P] [US5] 实现性能数据转换函数在 nuxtfrontend/app/utils/chartAdapter.ts
+
+### 投票分布图迁移
+
+- [ ] T067 [P] [US5] 投票分布图组件单元测试在 nuxtfrontend/tests/components/charts/VoteChart.test.ts
+- [ ] T068 [P] [US5] 创建投票分布图组件在 nuxtfrontend/app/components/charts/VoteChart.vue
+- [ ] T069 [P] [US5] 实现投票数据转换函数在 nuxtfrontend/app/utils/chartAdapter.ts
+
+### 价格走势图迁移
+
+- [ ] T070 [P] [US5] 价格走势图组件单元测试在 nuxtfrontend/tests/components/charts/PriceChart.test.ts
+- [ ] T071 [P] [US5] 创建价格走势图组件在 nuxtfrontend/app/components/charts/PriceChart.vue
+- [ ] T072 [P] [US5] 实现价格数据转换函数在 nuxtfrontend/app/utils/chartAdapter.ts
+
+### 图表性能优化和错误处理
+
+- [ ] T072A [P] [US5] 实现图表错误处理机制在 nuxtfrontend/app/components/charts/ChartErrorHandler.vue
+- [ ] T072B [P] [US5] 创建图表主题配置系统在 nuxtfrontend/app/utils/chartTheme.ts
+- [ ] T072C [P] [US5] 图表性能基准测试在 nuxtfrontend/tests/performance/chart-performance.test.ts
+- [ ] T072D [P] [US5] 图表加载状态和占位符实现在 nuxtfrontend/app/components/charts/ChartLoading.vue
+
+**Checkpoint**: 所有图表组件迁移完成，可以进行集成测试
+
+---
+
+## Phase 8: Integration & Polish
+
+**Purpose**: 系统集成、性能优化和质量保证
+
+### 系统集成
+
+- [ ] T073 [P] 集成所有 API 端点到前端页面
+- [ ] T074 [P] 实现前端状态管理在 nuxtfrontend/app/stores/
+- [ ] T075 [P] 创建仪表板聚合视图在 nuxtfrontend/app/pages/index.vue
+- [ ] T076 [P] 实现错误处理和用户反馈机制
+
+### 性能优化
+
+- [ ] T077 [P] 优化数据库查询性能
+- [ ] T078 [P] 实现 API 响应缓存
+- [ ] T079 [P] 优化前端资源加载和代码分割
+- [ ] T080 [P] 图表组件性能优化
+- [ ] T080A [P] 实现图表错误处理机制（支持 FR-017）
+- [ ] T080B [P] 实现图表主题配置系统（支持 FR-018）
+
+### 质量保证
+
+- [ ] T081 [P] 运行完整的端到端测试
+- [ ] T082 [P] 验证代码覆盖率 (后端 ≥80%，前端 ≥70%)
+- [ ] T083 [P] 性能基准测试验证
+- [ ] T084 [P] 安全扫描和漏洞修复
+- [ ] T085 [P] 无障碍性验证
+- [ ] T086 [P] 响应式设计验证
+- [ ] T086B [P] 实现数据不完整处理机制在 backend/src/services/data_quality_service.py
+- [ ] T086C [P] 实现模型分歧检测和置信度调整在 backend/src/decision_engine/confidence_adjuster.py
+- [ ] T086D [P] 实现极端市场情况检测和人工干预提示在 backend/src/services/market_monitor.py
+- [ ] T086E [P] 实现输入验证和错误信息提示在 backend/src/api/validators.py
+- [ ] T086F [P] 实现数据延迟处理和缓存降级在 backend/src/services/cache_service.py
+- [ ] T086G [P] 实现性能瓶颈检测和优雅降级在 backend/src/services/performance_monitor.py
+- [ ] T086H [P] 实现并发冲突处理机制在 backend/src/services/concurrency_service.py
+- [ ] T086A [P] 最终宪法合规性检查：验证所有宪法原则得到满足
+
+### 文档和部署
+
+- [ ] T087 [P] 更新 API 文档在 specs/001-stock-ai-decision-system/contracts/
+- [ ] T088 [P] 更新用户文档在 specs/001-stock-ai-decision-system/quickstart.md
+- [ ] T089 [P] 配置生产环境部署
+- [ ] T090 [P] 最终系统验收测试
 
 ---
 
@@ -207,101 +280,63 @@ description: "Task list for 股票 AI 策略回测决策系统"
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3+)**: All depend on Foundational phase completion
-  - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3)
-- **Polish (Final Phase)**: Depends on all desired user stories being complete
+- **Infrastructure (Phase 1)**: 无依赖 - 可以立即开始
+- **Core Backend (Phase 2)**: 依赖于 Infrastructure 完成 - 阻塞所有用户故事
+- **User Stories (Phase 3-7)**: 所有依赖于 Core Backend 阶段完成
+  - 用户故事可以并行进行（如果有人员配置）
+  - 或者按优先级顺序依次进行 (P1 → P2 → P3)
+- **Integration (Final Phase)**: 依赖于所有期望的用户故事完成
 
 ### User Story Dependencies
 
-- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
-- **User Story 2 (P2)**: Can start after Foundational (Phase 2) - May integrate with US1 but should be independently testable
-- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - May integrate with US1/US2 but should be independently testable
-- **User Story 4 (P4)**: Can start after Foundational (Phase 2) - May integrate with previous stories but should be independently testable
-
-### Within Each User Story
-
-- Tests (if included) MUST be written and FAIL before implementation
-- Models before services
-- Services before endpoints
-- Core implementation before integration
-- Story complete before moving to next priority
+- **US1 (P1)**: 可以在 Core Backend 后开始 - 不依赖其他故事
+- **US2 (P1)**: 可以在 Core Backend 后开始 - 应该独立可测试
+- **US3 (P2)**: 可以在 Core Backend 后开始 - 应该独立可测试
+- **US4 (P3)**: 可以在 Core Backend 后开始 - 应该独立可测试
+- **US5 (P2)**: 可以在 Core Backend 后开始 - 应该独立可测试
 
 ### Parallel Opportunities
 
-- All Setup tasks marked [P] can run in parallel
-- All Foundational tasks marked [P] can run in parallel (within Phase 2)
-- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
-- All tests for a user story marked [P] can run in parallel
-- Models within a story marked [P] can run in parallel
-- Different user stories can be worked on in parallel by different team members
-
----
-
-## Parallel Example: User Story 1
-
-```bash
-# Launch all tests for User Story 1 together:
-Task: "Contract test for stock recommendations endpoint in backend/tests/contract/test_recommendations.py"
-Task: "Integration test for recommendation user journey in backend/tests/integration/test_recommendations.py"
-Task: "Unit tests for recommendation logic in backend/tests/unit/test_recommendation_service.py"
-
-# Launch all models for User Story 1 together:
-Task: "Create Stock model in backend/src/models/stock_models.py"
-Task: "Create AIModel model in backend/src/models/database.py"
-Task: "Create Decision model in backend/src/models/database.py"
-Task: "Create VoteResult model in backend/src/models/database.py"
-```
-
----
+- 所有标记为 [P] 的 Infrastructure 任务可以并行运行
+- 所有标记为 [P] 的 Core Backend 任务可以并行运行
+- 一旦 Core Backend 阶段完成，所有用户故事可以并行开始
+- 不同用户故事可以由不同的团队成员并行工作
+- 图表迁移任务可以与其他用户故事并行进行
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
+### MVP First (US1 + US2 Only)
 
-1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
-3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Test User Story 1 independently
-5. Deploy/demo if ready
+1. 完成 Phase 1: Infrastructure
+2. 完成 Phase 2: Core Backend (CRITICAL - 阻塞所有故事)
+3. 完成 Phase 3: US1 (股票推荐)
+4. 完成 Phase 4: US2 (决策点)
+5. **停止并验证**: 独立测试核心功能
+6. 如果准备就绪，部署/演示
 
 ### Incremental Delivery
 
-1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
-3. Add User Story 2 → Test independently → Deploy/Demo
-4. Add User Story 3 → Test independently → Deploy/Demo
-5. Add User Story 4 → Test independently → Deploy/Demo
-6. Each story adds value without breaking previous stories
-
-### Parallel Team Strategy
-
-With multiple developers:
-
-1. Team completes Setup + Foundational together
-2. Once Foundational is done:
-   - Developer A: User Story 1
-   - Developer B: User Story 2
-   - Developer C: User Story 3
-   - Developer D: User Story 4
-3. Stories complete and integrate independently
-
----
+1. 完成 Infrastructure + Core Backend → 基础就绪
+2. 添加 US1 (股票推荐) → 独立测试 → 部署/演示
+3. 添加 US2 (决策点) → 独立测试 → 部署/演示
+4. 添加 US5 (图表迁移) → 独立测试 → 部署/演示
+5. 添加 US3 (投票分析) → 独立测试 → 部署/演示
+6. 添加 US4 (回测评估) → 独立测试 → 部署/演示
+7. 每个故事都增加价值而不破坏之前的故事
 
 ## Summary
 
-**Total Tasks**: 95 tasks across all phases
-**Task Distribution**:
-
-- Setup: 7 tasks
-- Foundational: 12 tasks
-- User Story 1: 19 tasks
-- User Story 2: 15 tasks
-- User Story 3: 15 tasks
-- User Story 4: 15 tasks
-- Polish: 12 tasks
-
-**Parallel Opportunities**: 68 tasks marked with [P] can run in parallel
-**MVP Scope**: User Story 1 only (获取 AI 选股推荐)
+- **总任务数**: 103 个任务
+- **按用户故事的任务数**:
+  - US1: 8 个任务
+  - US2: 8 个任务
+  - US3: 8 个任务
+  - US4: 8 个任务
+  - US5: 21 个任务
+  - 基础设施和核心: 23 个任务
+  - 集成和优化: 27 个任务
+- **并行机会**: 79 个并行任务 (77%)
+- **独立测试标准**: 每个用户故事都有独立的测试标准
+- **建议 MVP 范围**: US1 + US2 (股票推荐 + 决策点)
+- **宪法合规性**: 所有任务都遵循宪法中的代码质量和测试标准
+- **需求覆盖率**: 100% (所有功能需求都有对应的任务)

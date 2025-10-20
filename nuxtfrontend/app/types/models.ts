@@ -2,11 +2,19 @@
  * 模型相关类型定义
  */
 
+export const ModelType = {
+  TECHNICAL: 'technical',
+  MACHINE_LEARNING: 'machine_learning',
+  FUNDAMENTAL: 'fundamental'
+} as const;
+
+export type ModelType = typeof ModelType[keyof typeof ModelType];
+
 export interface ModelInfo {
   modelId: string; // 改为string以匹配后端的UUID
   name: string;
   description?: string;
-  modelType: 'technical' | 'machine_learning' | 'fundamental'; // 匹配后端类型
+  modelType: ModelType; // 使用枚举类型
   parameters: Record<string, unknown>;
   weight: number;
   isActive: boolean;
@@ -49,7 +57,7 @@ export interface ApiModelInfo {
 
 export interface PerformanceHistory {
   date: string;
-  modelId: number;
+  modelId: string; // 修复类型不一致问题
   modelName: string;
   metrics: {
     accuracy?: number;
@@ -71,3 +79,13 @@ export interface ApiModelPerformance {
   winRate: number;
   lastUpdated: string;
 }
+
+// 模型状态枚举
+export const ModelStatus = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  TRAINING: 'training',
+  ERROR: 'error'
+} as const;
+
+export type ModelStatus = typeof ModelStatus[keyof typeof ModelStatus];

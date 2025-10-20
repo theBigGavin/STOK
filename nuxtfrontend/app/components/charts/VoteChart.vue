@@ -1,16 +1,12 @@
-<!-- components/charts/VoteChart.vue -->
 <template>
   <UCard>
     <template #header>
       <div class="flex justify-between items-center">
         <h3 class="text-lg font-semibold">模型投票分布</h3>
         <div class="flex gap-2">
-          <UButton
-            v-for="chartType in chartTypes"
-            :key="chartType.value"
+          <UButton v-for="chartType in chartTypes" :key="chartType.value"
             :variant="selectedChartType === chartType.value ? 'solid' : 'outline'"
-            @click="selectedChartType = chartType.value as 'pie' | 'bar'"
-          >
+            @click="selectedChartType = chartType.value">
             {{ chartType.label }}
           </UButton>
         </div>
@@ -39,25 +35,18 @@
       </div>
     </div>
 
-    <div v-else-if="selectedChartType === 'pie'" class="h-80 flex items-center justify-center">
-      <div class="text-center">
-        <UIcon name="i-heroicons-chart-pie" class="h-16 w-16 text-gray-400" />
-        <p class="mt-4 text-sm text-gray-500">饼图功能暂不可用</p>
-      </div>
+    <div v-else class="h-80">
+      <Pie v-if="selectedChartType === 'pie'" :data="pieChartData" :options="pieChartOptions"
+        :key="`pie-${chartKey}`" />
+      <Bar v-else :data="barChartData" :options="barChartOptions" :key="`bar-${chartKey}`" />
     </div>
-
-    <VisXYContainer v-else :data="barChartData" class="h-80">
-      <VisBar :x="barX" :y="barY" :color="barColor" />
-      <VisAxis type="x" />
-      <VisAxis type="y" :tick-format="formatCount" />
-      <VisTooltip :triggers="barTooltipTriggers" />
-    </VisXYContainer>
   </UCard>
 </template>
 
 <script setup lang="ts">
-import { VisXYContainer, VisAxis, VisTooltip } from '@unovis/vue';
+import { Pie, Bar } from '@ant-design/charts';
 import type { ModelDecision } from '~/types/decisions';
+import { chartTheme } from '~/utils/chartTheme';
 
 interface VoteData {
   decision: string;
@@ -82,6 +71,7 @@ defineEmits<{
 }>();
 
 const selectedChartType = ref<'pie' | 'bar'>('pie');
+const chartKey = ref(0);
 
 const chartTypes = [
   { label: '饼图', value: 'pie' as const },
@@ -94,12 +84,19 @@ const decisionColors = {
   HOLD: 'var(--color-amber-500)',
 };
 
+const decisionLabels = {
+  BUY: '买入',
+  SELL: '卖出',
+  HOLD: '持有',
+};
+
+// 计算投票数据
 const voteData = computed<VoteData[]>(() => {
   if (!props.data || props.data.length === 0) return [];
 
   const decisionCounts = props.data.reduce(
     (acc, item) => {
-      acc[item.decision] = (acc[item.decision] || 0) + 1;
+      acc[item.voteType] = (acc[item.voteType] || 0) + 1;
       return acc;
     },
     {} as Record<string, number>
@@ -115,26 +112,156 @@ const voteData = computed<VoteData[]>(() => {
   }));
 });
 
-// 柱状图数据
-const barChartData = computed(() => voteData.value);
-const barX = (d: VoteData) => d.decision;
-const barY = (d: VoteData) => d.count;
-const barColor = (d: VoteData) => d.color;
-const barTooltipTriggers = {
-  [VisTooltip.selectors.bar]: (d: VoteData) =>
-    `${d.decision}: ${d.count}票 (${d.percentage.toFixed(1)}%)`,
-};
+// 饼图数据
+const pieChartData = computed(() => ({
+  datasets: [{
+    data: voteData.value.map(item => ({
+      label: decisionLabels[item.decision as keyof typeof decisionLabels] || item.decision,
+      value: item.count,
+      color: item.color,
+    })),
+  }],
+}));
 
-const formatCount = (count: number) => `${count}票`;
+// 柱状图数据
+const barChartData = computed(() => ({
+  datasets: [{
+    label: '投票数',
+    data: voteData.value.map(item => ({
+      decision: decisionLabels[item.decision as keyof typeof decisionLabels] || item.decision,
+      count: item.count,
+      color: item.color,
+    })),
+  }],
+}));
+
+// 饼图配置
+const pieChartOptions = computed(() => ({
+  animation: {
+    duration: 1000,
+    easing: 'easeOutQuart' as const,
+  },
+  plugins: {
+    legend: {
+      display: true,
+      position: 'right' as const,
+      labels: {
+        usePointStyle: true,
+        padding: 20,
+        font: {
+          size: 12,
+        },
+        generateLabels: (chart: any) => {
+          const data = chart.data.datasets[0].data;
+          return data.map((item: any, index: number) => ({
+            text: `${item.label} (${item.value}票)`,
+            fillStyle: item.color,
+            strokeStyle: item.color,
+            pointStyle: 'circle',
+            hidden: false,
+            index,
+          }));
+        },
+      },
+    },
+    tooltip: {
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      titleColor: '#374151',
+      bodyColor: '#6B7280',
+      borderColor: '#E5E7EB',
+      borderWidth: 1,
+      cornerRadius: 6,
+      padding: 12,
+      callbacks: {
+        label: (context: any) => {
+          const label = context.label || '';
+          const value = context.parsed;
+          const total = context.dataset.data.reduce((sum: number, item: any) => sum + item.value, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
+          return `${label}: ${value}票 (${percentage}%)`;
+        },
+      },
+    },
+  },
+  maintainAspectRatio: false,
+}));
+
+// 柱状图配置
+const barChartOptions = computed(() => ({
+  animation: {
+    duration: 1000,
+    easing: 'easeOutQuart' as const,
+  },
+  interaction: {
+    mode: 'index' as const,
+    intersect: false,
+  },
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      titleColor: '#374151',
+      bodyColor: '#6B7280',
+      borderColor: '#E5E7EB',
+      borderWidth: 1,
+      cornerRadius: 6,
+      padding: 12,
+      callbacks: {
+        label: (context: any) => {
+          const label = context.dataset.label || '';
+          const value = context.parsed.y;
+          const total = voteData.value.reduce((sum, item) => sum + item.count, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
+          return `${label}: ${value}票 (${percentage}%)`;
+        },
+      },
+    },
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false,
+      },
+    },
+    y: {
+      beginAtZero: true,
+      grid: {
+        color: '#F3F4F6',
+      },
+      ticks: {
+        callback: (value: any) => {
+          return `${value}票`;
+        },
+      },
+    },
+  },
+  maintainAspectRatio: false,
+}));
+
+// 监听数据变化
+watch(() => props.data, () => {
+  chartKey.value++;
+}, { deep: true });
+
+// 监听图表类型变化
+watch(selectedChartType, () => {
+  chartKey.value++;
+});
 </script>
 
 <style scoped>
-:deep(.vis-tooltip) {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 8px 12px;
+:deep(.ant-chart) {
+  width: 100%;
+  height: 100%;
+}
+
+:deep(.ant-chart-legend) {
+  padding: 8px 0;
+}
+
+:deep(.ant-chart-tooltip) {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  font-size: 14px;
 }
 </style>

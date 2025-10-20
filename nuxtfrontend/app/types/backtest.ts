@@ -2,6 +2,30 @@
  * 回测相关类型定义
  */
 
+export const TradeType = {
+  BUY: 'BUY',
+  SELL: 'SELL'
+} as const;
+
+export type TradeType = typeof TradeType[keyof typeof TradeType];
+
+export const SignalType = {
+  BUY: 'BUY',
+  SELL: 'SELL',
+  HOLD: 'HOLD'
+} as const;
+
+export type SignalType = typeof SignalType[keyof typeof SignalType];
+
+export const StrategyType = {
+  TECHNICAL: 'technical',
+  FUNDAMENTAL: 'fundamental',
+  MACHINE_LEARNING: 'machine_learning',
+  HYBRID: 'hybrid'
+} as const;
+
+export type StrategyType = typeof StrategyType[keyof typeof StrategyType];
+
 export interface BacktestResult {
   totalReturn: number;
   annualReturn: number;
@@ -21,7 +45,7 @@ export interface BacktestResult {
 }
 
 export interface Trade {
-  type: 'BUY' | 'SELL';
+  type: TradeType;
   date: string;
   price: number;
   shares: number;
@@ -38,7 +62,7 @@ export interface EquityPoint {
 
 export interface Signal {
   date: string;
-  signal: 'BUY' | 'SELL' | 'HOLD';
+  signal: SignalType;
   price: number;
   model: string;
   confidence: number;
@@ -50,8 +74,8 @@ export interface BacktestRequest {
   startDate: string;
   endDate: string;
   initialCapital: number;
-  modelIds?: number[];
-  strategy?: string;
+  modelIds?: string[]; // 修复类型不一致问题
+  strategy?: StrategyType;
   parameters?: Record<string, unknown>;
 }
 
@@ -59,4 +83,31 @@ export interface EquityCurve {
   name: string;
   data: EquityPoint[];
   color: string;
+}
+
+// 回测配置
+export interface BacktestConfig {
+  symbol: string;
+  startDate: string;
+  endDate: string;
+  initialCapital: number;
+  selectedModels: string[];
+  strategy: StrategyType;
+  parameters: Record<string, unknown>;
+}
+
+// 回测性能指标
+export interface PerformanceMetrics {
+  totalReturn: number;
+  annualReturn: number;
+  volatility: number;
+  sharpeRatio: number;
+  maxDrawdown: number;
+  winRate: number;
+  profitFactor: number;
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  avgProfitPerTrade: number;
+  avgLossPerTrade: number;
 }

@@ -1,275 +1,335 @@
-# 快速入门指南: 股票 AI 策略回测决策系统
+# 图表库迁移快速开始指南
 
-**Feature**: 001-stock-ai-decision-system  
-**Date**: 2025-10-18  
-**Status**: Draft
+## 概述
 
-## 系统概述
+本指南提供从 Unovis 迁移到 Ant Design Charts 的快速开始步骤。迁移涉及 4 个主要图表组件，目标是保持功能完整性同时提升与现有 Ant Design 生态系统的集成度。
 
-股票 AI 策略回测决策系统是一个基于多个 AI 模型的股票交易决策平台，通过多模型投票机制提供股票推荐和买卖决策点，帮助投资者提高投资成功率并降低风险。
+## 前置要求
 
-## 快速开始
+- Node.js 18+
+- pnpm 8+
+- Nuxt 3 项目
+- 现有 Unovis 图表组件
 
-### 1. 环境要求
+## 安装依赖
 
-**系统要求**:
-
-- Docker 20.10+
-- Docker Compose 2.0+
-- Node.js 18+ (前端开发)
-- Python 3.9+ (后端开发)
-
-**硬件要求**:
-
-- 内存: 8GB+ (推荐 16GB)
-- 存储: 10GB+ 可用空间
-- 网络: 稳定的互联网连接
-
-### 2. 一键启动开发环境
+### 1. 安装 Ant Design Charts Vue
 
 ```bash
-# 克隆项目
-git clone <repository-url>
-cd STOK2
-
-# 启动开发环境
-./scripts/start-dev.sh
+cd nuxtfrontend
+pnpm add @ant-design/charts-vue
 ```
 
-这个脚本会自动:
-
-- 启动 PostgreSQL 数据库
-- 启动 Redis 缓存和消息队列
-- 启动后端 FastAPI 服务
-- 启动前端 Nuxt 开发服务器
-
-### 3. 访问系统
-
-**前端应用**: http://localhost:3000  
-**后端 API**: http://localhost:8099  
-**API 文档**: http://localhost:8099/docs
-
-### 4. 初始配置
-
-#### 数据库初始化
+### 2. 移除 Unovis 依赖
 
 ```bash
-# 运行数据库迁移
-./scripts/run_migrations.sh
-
-# 导入测试数据 (可选)
-psql -h localhost -U postgres -d stock_db -f data/migrations/seed_test_data.sql
+pnpm remove @unovis/ts @unovis/vue
 ```
 
-#### 环境变量配置
+### 3. 更新 package.json
 
-复制环境变量模板并配置:
-
-```bash
-# 后端配置
-cp backend/.env.example backend/.env.development
-
-# 前端配置
-cp nuxtfrontend/.env.example nuxtfrontend/.env
-```
-
-### 5. 核心功能体验
-
-#### 获取股票推荐
-
-```bash
-# 使用 curl 测试 API
-curl "http://localhost:8099/api/v1/decisions/recommendations?limit=5"
-```
-
-响应示例:
+确保 `package.json` 包含新的依赖：
 
 ```json
 {
-  "data": {
-    "recommendations": [
-      {
-        "id": "uuid",
-        "stock": {
-          "symbol": "000001",
-          "name": "平安银行",
-          "industry": "银行"
-        },
-        "decision_type": "buy",
-        "confidence": 0.85,
-        "target_price": 15.2,
-        "reasoning": "多模型一致看好，技术面和基本面共振"
-      }
-    ]
+  "dependencies": {
+    "@ant-design/charts-vue": "^1.4.0"
+    // 移除 @unovis/ts 和 @unovis/vue
+  }
+}
+```
+
+## 组件迁移步骤
+
+### 1. 净值曲线图 (EquityCurveChart)
+
+**迁移前** (Unovis):
+
+```vue
+<VisXYContainer :data="chartData" class="h-80">
+  <VisLine :x="x" :y="(d) => getCurveValue(d, curve.name)" :color="curve.color" />
+  <VisArea :x="x" :y="(d) => getCurveValue(d, curve.name)" :color="curve.color" :opacity="0.1" />
+  <VisAxis type="x" :tick-format="formatDate" />
+  <VisAxis type="y" :tick-format="formatEquity" />
+  <VisCrosshair :template="tooltipTemplate" />
+  <VisTooltip />
+</VisXYContainer>
+```
+
+**迁移后** (Ant Design Charts):
+
+```vue
+<Line
+  :chart-style="{ height: '320px' }"
+  :data="transformedData"
+  :x-field="'date'"
+  :y-field="'value'"
+  :series-field="'name'"
+  :color="getCurveColor"
+  :smooth="true"
+  :tooltip="tooltipConfig"
+  :legend="legendConfig"
+  :interactions="[{ type: 'crosshair' }]"
+/>
+```
+
+### 2. 性能趋势图 (PerformanceChart)
+
+**迁移前**:
+
+```vue
+<VisXYContainer :data="chartData" class="h-80">
+  <VisLine :x="x" :y="(d) => getMetricValue(d, model)" :color="getModelColor(model)" />
+  <VisArea :x="x" :y="(d) => getMetricValue(d, model)" :color="getModelColor(model)" :opacity="0.1" />
+  <VisAxis type="x" :tick-format="formatDate" />
+  <VisAxis type="y" :tick-format="formatMetric" />
+  <VisCrosshair :template="tooltipTemplate" />
+  <VisTooltip />
+</VisXYContainer>
+```
+
+**迁移后**:
+
+```vue
+<Line
+  :chart-style="{ height: '320px' }"
+  :data="performanceData"
+  :x-field="'date'"
+  :y-field="'value'"
+  :series-field="'model'"
+  :color="getModelColor"
+  :smooth="true"
+  :tooltip="performanceTooltip"
+  :legend="performanceLegend"
+  :interactions="[{ type: 'crosshair' }]"
+/>
+```
+
+### 3. 投票分布图 (VoteChart)
+
+**迁移前**:
+
+```vue
+<VisXYContainer :data="barChartData" class="h-80">
+  <VisBar :x="barX" :y="barY" :color="barColor" />
+  <VisAxis type="x" />
+  <VisAxis type="y" :tick-format="formatCount" />
+  <VisTooltip :triggers="barTooltipTriggers" />
+</VisXYContainer>
+```
+
+**迁移后**:
+
+```vue
+<Bar
+  :chart-style="{ height: '320px' }"
+  :data="voteData"
+  :x-field="'decision'"
+  :y-field="'count'"
+  :color-field="'color'"
+  :label="voteLabel"
+  :tooltip="voteTooltip"
+  :interactions="[{ type: 'active-region' }]"
+/>
+```
+
+### 4. 价格走势图 (PriceChart)
+
+**迁移前**:
+
+```vue
+<!-- 自定义 SVG 图表 -->
+<div ref="chartContainer" class="chart-canvas"></div>
+```
+
+**迁移后**:
+
+```vue
+<Line
+  v-if="chartType === 'line'"
+  :chart-style="{ height: '400px' }"
+  :data="priceData"
+  :x-field="'date'"
+  :y-field="'close'"
+  :color="priceColor"
+  :tooltip="priceTooltip"
+  :interactions="[{ type: 'crosshair' }]"
+/>
+
+<Candlestick
+  v-else
+  :chart-style="{ height: '400px' }"
+  :data="priceData"
+  :x-field="'date'"
+  :y-field="['open', 'close', 'low', 'high']"
+  :tooltip="candlestickTooltip"
+  :interactions="[{ type: 'crosshair' }]"
+/>
+```
+
+## 数据转换助手
+
+创建 `utils/chartAdapter.ts` 文件提供数据转换功能：
+
+```typescript
+// 净值曲线数据转换
+export function transformEquityData(curves: EquityCurve[]) {
+  return curves.flatMap((curve) =>
+    curve.data.map((point) => ({
+      date: new Date(point.date),
+      value: point.value,
+      name: curve.name,
+    }))
+  );
+}
+
+// 性能数据转换
+export function transformPerformanceData(
+  data: PerformanceHistory[],
+  metric: string
+) {
+  return data.map((item) => ({
+    date: new Date(item.date),
+    value: item.metrics[metric as keyof PerformanceMetrics] || 0,
+    model: item.modelName,
+  }));
+}
+
+// 投票数据转换
+export function transformVoteData(data: ModelDecision[]) {
+  const decisionCounts = data.reduce((acc, item) => {
+    acc[item.decision] = (acc[item.decision] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(decisionCounts).map(([decision, count]) => ({
+    decision,
+    count,
+    color: decisionColors[decision as keyof typeof decisionColors],
+  }));
+}
+```
+
+## 配置对象定义
+
+创建统一的图表配置：
+
+```typescript
+// config/chartConfig.ts
+export const tooltipConfig = {
+  showTitle: true,
+  formatter: (datum: any) => ({
+    name: datum.name,
+    value: formatValue(datum.value),
+  }),
+};
+
+export const legendConfig = {
+  position: "top" as const,
+  itemName: {
+    formatter: (text: string) => text,
   },
-  "message": "成功获取推荐",
-  "status": "success"
-}
+};
+
+export const crosshairInteraction = {
+  type: "crosshair" as const,
+  cfg: {
+    line: {
+      style: {
+        lineWidth: 1,
+        stroke: "#bfbfbf",
+        lineDash: [4, 4],
+      },
+    },
+  },
+};
 ```
 
-#### 查看决策详情
+## 测试验证
 
-```bash
-curl "http://localhost:8099/api/v1/decisions/{decision_id}"
+### 1. 功能测试
+
+```typescript
+// tests/components/charts/EquityCurveChart.test.ts
+import { mount } from "@vue/test-utils";
+import EquityCurveChart from "~/components/charts/EquityCurveChart.vue";
+
+describe("EquityCurveChart", () => {
+  it("renders chart with correct data", () => {
+    const wrapper = mount(EquityCurveChart, {
+      props: {
+        curves: mockCurves,
+        loading: false,
+      },
+    });
+
+    expect(wrapper.find(".ant-chart").exists()).toBe(true);
+    expect(wrapper.emitted("periodChange")).toBeTruthy();
+  });
+});
 ```
 
-#### 执行回测分析
+### 2. 可视化回归测试
 
-```bash
-curl -X POST "http://localhost:8099/api/v1/backtest" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "symbol": "000001",
-    "start_date": "2024-01-01",
-    "end_date": "2024-12-31",
-    "initial_capital": 100000
-  }'
+使用 chrome-devtools MCP 进行可视化测试：
+
+```typescript
+// tests/e2e/charts.spec.ts
+describe("Chart Migration E2E Tests", () => {
+  it("should display equity curve correctly", async () => {
+    // 使用 MCP 工具进行截图对比
+    const snapshot = await takeChartSnapshot("equity-curve");
+    expect(snapshot).toMatchVisualSnapshot();
+  });
+});
 ```
 
-### 6. 开发工作流
+## 部署检查清单
 
-#### 后端开发
+- [ ] 所有图表组件已迁移
+- [ ] 数据转换功能正常
+- [ ] 交互功能完整
+- [ ] 样式保持一致
+- [ ] 测试用例通过
+- [ ] 性能指标达标
+- [ ] 无障碍性验证通过
 
-```bash
-# 进入后端目录
-cd backend
+## 故障排除
 
-# 安装依赖
-pip install -r requirements.txt
+### 常见问题
 
-# 运行开发服务器
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+1. **图表不显示**
 
-# 运行测试
-pytest tests/
+   - 检查数据格式是否正确
+   - 验证字段名是否匹配
+   - 确认颜色配置有效
+
+2. **工具提示不工作**
+
+   - 检查 tooltip 配置
+   - 验证数据字段存在
+   - 确认交互配置正确
+
+3. **样式不一致**
+   - 检查主题配置
+   - 验证颜色映射
+   - 确认 CSS 变量正确
+
+### 调试技巧
+
+```typescript
+// 在组件中添加调试信息
+const debugConfig = computed(() => {
+  console.log("Chart config:", config);
+  console.log("Chart data:", data.value);
+  return config;
+});
 ```
 
-#### 前端开发
+## 下一步
 
-```bash
-# 进入前端目录
-cd nuxtfrontend
-
-# 安装依赖
-pnpm install
-
-# 运行开发服务器
-pnpm dev
-
-# 运行测试
-pnpm test
-```
-
-### 7. 数据流说明
-
-#### 实时决策流程
-
-1. **数据获取**: 从数据源获取实时股票数据
-2. **特征工程**: 计算技术指标和基本面指标
-3. **模型推理**: 多个 AI 模型并行生成信号
-4. **投票聚合**: 基于权重聚合模型投票结果
-5. **决策生成**: 生成最终决策和置信度
-
-#### 回测流程
-
-1. **历史数据加载**: 加载指定时间段的股票数据
-2. **模拟交易**: 按照决策规则执行模拟交易
-3. **性能计算**: 计算收益率、夏普比率等指标
-4. **结果存储**: 保存回测结果供分析使用
-
-### 8. 关键配置
-
-#### 模型权重配置
-
-在 `backend/src/config/model_weights.py` 中配置:
-
-```python
-MODEL_WEIGHTS = {
-    "technical_model": 0.4,
-    "fundamental_model": 0.3,
-    "machine_learning_model": 0.3
-}
-```
-
-#### 决策阈值配置
-
-在 `backend/src/config/decision_thresholds.py` 中配置:
-
-```python
-DECISION_THRESHOLDS = {
-    "buy_confidence": 0.7,
-    "sell_confidence": 0.6,
-    "hold_confidence": 0.5
-}
-```
-
-### 9. 监控和调试
-
-#### 系统监控
-
-- **API 监控**: http://localhost:8099/health
-- **数据库监控**: 使用 pgAdmin 或 psql
-- **Redis 监控**: 使用 redis-cli
-
-#### 日志查看
-
-```bash
-# 查看后端日志
-docker logs stok-backend
-
-# 查看前端日志
-cd nuxtfrontend && pnpm dev
-```
-
-### 10. 故障排除
-
-#### 常见问题
-
-**数据库连接失败**:
-
-- 检查 PostgreSQL 服务是否运行
-- 验证数据库连接配置
-
-**Redis 连接失败**:
-
-- 检查 Redis 服务是否运行
-- 验证 Redis 配置
-
-**API 响应慢**:
-
-- 检查数据库查询性能
-- 验证缓存配置
-- 检查网络连接
-
-#### 性能优化建议
-
-1. **数据库优化**:
-
-   - 为常用查询字段添加索引
-   - 使用连接池管理数据库连接
-
-2. **缓存策略**:
-
-   - 缓存频繁访问的股票数据
-   - 使用 Redis 缓存模型计算结果
-
-3. **异步处理**:
-   - 使用 Celery 处理耗时任务
-   - 异步处理数据更新和模型训练
-
-### 11. 下一步
-
-完成快速入门后，您可以:
-
-1. **探索功能**: 通过前端界面体验所有功能
-2. **查看文档**: 阅读详细的 API 文档和数据模型
-3. **定制开发**: 根据需求添加新的 AI 模型
-4. **性能测试**: 使用测试数据进行系统压力测试
-5. **部署上线**: 参考部署指南进行生产环境部署
-
-如需更多帮助，请参考:
-
-- [API 文档](contracts/openapi.yaml)
-- [数据模型](data-model.md)
-- [技术研究](research.md)
-- [实现计划](plan.md)
+1. 逐个组件进行迁移测试
+2. 进行端到端功能验证
+3. 性能基准测试
+4. 用户验收测试
+5. 生产环境部署

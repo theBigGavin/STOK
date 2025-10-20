@@ -12,7 +12,7 @@ from typing import Dict, Any
 from src.config.database import engine
 from src.models.database import Base
 from src.models.stock_models import APIResponse
-from src.api import stocks, models, decisions, backtest, health
+from src.api import stocks, models, decisions, backtest, health, recommendations
 
 
 @asynccontextmanager
@@ -57,6 +57,7 @@ app.include_router(stocks.router, prefix="/api/v1", tags=["股票数据"])
 app.include_router(models.router, prefix="/api/v1", tags=["模型管理"])
 app.include_router(decisions.router, prefix="/api/v1", tags=["决策引擎"])
 app.include_router(backtest.router, prefix="/api/v1", tags=["回测分析"])
+app.include_router(recommendations.router, prefix="/api/v1", tags=["股票推荐"])
 
 
 @app.exception_handler(HTTPException)
@@ -109,7 +110,8 @@ async def api_root():
                 "stocks": "/api/v1/stocks",
                 "models": "/api/v1/models",
                 "decisions": "/api/v1/decisions",
-                "backtest": "/api/v1/backtest"
+                "backtest": "/api/v1/backtest",
+                "recommendations": "/api/v1/recommendations"
             }
         },
         message="API服务运行正常",

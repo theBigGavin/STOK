@@ -1,18 +1,12 @@
 <template>
   <UPageGrid class="lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-px">
     <!-- 活跃股票数 -->
-    <UPageCard
-      icon="i-lucide-trending-up"
-      title="活跃股票"
-      variant="subtle"
-      :ui="{
-        container: 'gap-y-1.5',
-        wrapper: 'items-start',
-        leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
-        title: 'font-normal text-muted text-xs uppercase',
-      }"
-      class="lg:rounded-none first:rounded-l-lg last:rounded-r-lg hover:z-1"
-    >
+    <UPageCard icon="i-lucide-trending-up" title="活跃股票" variant="subtle" :ui="{
+      container: 'gap-y-1.5',
+      wrapper: 'items-start',
+      leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+      title: 'font-normal text-muted text-xs uppercase',
+    }" class="lg:rounded-none first:rounded-l-lg last:rounded-r-lg hover:z-1">
       <div class="flex items-center gap-2">
         <span class="text-2xl font-semibold text-highlighted">
           {{ stats.activeStocks }}
@@ -23,18 +17,12 @@
     </UPageCard>
 
     <!-- 模型数量 -->
-    <UPageCard
-      icon="i-lucide-brain"
-      title="模型数量"
-      variant="subtle"
-      :ui="{
-        container: 'gap-y-1.5',
-        wrapper: 'items-start',
-        leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
-        title: 'font-normal text-muted text-xs uppercase',
-      }"
-      class="lg:rounded-none hover:z-1"
-    >
+    <UPageCard icon="i-lucide-brain" title="模型数量" variant="subtle" :ui="{
+      container: 'gap-y-1.5',
+      wrapper: 'items-start',
+      leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+      title: 'font-normal text-muted text-xs uppercase',
+    }" class="lg:rounded-none hover:z-1">
       <div class="flex items-center gap-2">
         <span class="text-2xl font-semibold text-highlighted">
           {{ stats.totalModels }}
@@ -45,18 +33,12 @@
     </UPageCard>
 
     <!-- 决策成功率 -->
-    <UPageCard
-      icon="i-lucide-target"
-      title="决策成功率"
-      variant="subtle"
-      :ui="{
-        container: 'gap-y-1.5',
-        wrapper: 'items-start',
-        leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
-        title: 'font-normal text-muted text-xs uppercase',
-      }"
-      class="lg:rounded-none hover:z-1"
-    >
+    <UPageCard icon="i-lucide-target" title="决策成功率" variant="subtle" :ui="{
+      container: 'gap-y-1.5',
+      wrapper: 'items-start',
+      leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+      title: 'font-normal text-muted text-xs uppercase',
+    }" class="lg:rounded-none hover:z-1">
       <div class="flex items-center gap-2">
         <span class="text-2xl font-semibold text-highlighted">
           {{ stats.decisionSuccessRate.toFixed(1) }}%
@@ -69,18 +51,12 @@
     </UPageCard>
 
     <!-- 系统状态 -->
-    <UPageCard
-      icon="i-lucide-server"
-      title="系统状态"
-      variant="subtle"
-      :ui="{
-        container: 'gap-y-1.5',
-        wrapper: 'items-start',
-        leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
-        title: 'font-normal text-muted text-xs uppercase',
-      }"
-      class="lg:rounded-none last:rounded-r-lg hover:z-1"
-    >
+    <UPageCard icon="i-lucide-server" title="系统状态" variant="subtle" :ui="{
+      container: 'gap-y-1.5',
+      wrapper: 'items-start',
+      leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
+      title: 'font-normal text-muted text-xs uppercase',
+    }" class="lg:rounded-none last:rounded-r-lg hover:z-1">
       <div class="flex items-center gap-2">
         <span class="text-2xl font-semibold text-highlighted">
           {{ systemStatusText }}
@@ -97,6 +73,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useDashboardData } from '~/composables/useDashboardData';
+import type { SystemStatus } from '~/composables/useDashboardData';
 
 const { dashboardStats, systemStatusColor, successRateColor } = useDashboardData();
 
@@ -129,15 +106,15 @@ const successRateTrend = computed(() => {
   return '需改进';
 });
 
-// 模拟统计数据（用于开发阶段）
+// 使用真实的统计数据，避免模拟数据
 const stats = computed(() => ({
-  activeStocks: dashboardStats.value.activeStocks || 156,
-  totalModels: dashboardStats.value.totalModels || 8,
-  decisionSuccessRate: dashboardStats.value.decisionSuccessRate || 78.5,
-  systemStatus: dashboardStats.value.systemStatus || 'healthy',
-  totalDecisions: dashboardStats.value.totalDecisions || 1247,
-  avgConfidence: dashboardStats.value.avgConfidence || 82.3,
-  systemUptime: dashboardStats.value.systemUptime || 86400, // 1天
-  memoryUsage: dashboardStats.value.memoryUsage || 45.2,
+  activeStocks: dashboardStats.value.activeStocks,
+  totalModels: dashboardStats.value.totalModels,
+  decisionSuccessRate: dashboardStats.value.decisionSuccessRate,
+  systemStatus: dashboardStats.value.systemStatus,
+  totalDecisions: dashboardStats.value.totalDecisions,
+  avgConfidence: dashboardStats.value.avgConfidence,
+  systemUptime: dashboardStats.value.systemUptime,
+  memoryUsage: dashboardStats.value.memoryUsage,
 }));
 </script>

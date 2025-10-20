@@ -1,239 +1,276 @@
-# Data Model: 股票 AI 策略回测决策系统
+# 图表库迁移数据模型
 
-**Feature**: 001-stock-ai-decision-system  
-**Date**: 2025-10-18  
-**Status**: Draft
+## 概述
 
-## 核心实体
+本文档定义了图表库迁移过程中的数据模型和转换规则。迁移的核心是保持现有数据结构不变，仅调整数据访问和渲染方式。
 
-### 1. 股票实体 (Stock)
+## 核心数据实体
 
-代表股票标的的基本信息和价格数据。
+### 1. 净值曲线数据 (EquityCurve)
 
-**字段**:
+**现有结构**:
 
-- `id`: UUID (主键)
-- `symbol`: String (股票代码，唯一)
-- `name`: String (股票名称)
-- `industry`: String (所属行业)
-- `market`: String (市场类型: A 股/港股/美股)
-- `current_price`: Decimal (当前价格)
-- `price_change`: Decimal (价格变动)
-- `price_change_percent`: Decimal (涨跌幅)
-- `volume`: BigInteger (成交量)
-- `market_cap`: Decimal (市值)
-- `pe_ratio`: Decimal (市盈率)
-- `pb_ratio`: Decimal (市净率)
-- `dividend_yield`: Decimal (股息率)
-- `created_at`: DateTime (创建时间)
-- `updated_at`: DateTime (更新时间)
+```typescript
+interface EquityPoint {
+  date: string;
+  value: number;
+}
 
-**关系**:
-
-- 一对多: Stock → StockPrice (历史价格)
-- 一对多: Stock → Decision (决策记录)
-- 一对多: Stock → BacktestResult (回测结果)
-
-### 2. 股票价格实体 (StockPrice)
-
-存储股票的历史价格数据。
-
-**字段**:
-
-- `id`: UUID (主键)
-- `stock_id`: UUID (外键，关联 Stock)
-- `date`: Date (交易日期)
-- `open_price`: Decimal (开盘价)
-- `high_price`: Decimal (最高价)
-- `low_price`: Decimal (最低价)
-- `close_price`: Decimal (收盘价)
-- `volume`: BigInteger (成交量)
-- `adjusted_close`: Decimal (调整后收盘价)
-- `created_at`: DateTime (创建时间)
-
-**索引**:
-
-- 复合索引: (stock_id, date)
-
-### 3. AI 模型实体 (AIModel)
-
-代表不同的 AI 策略模型。
-
-**字段**:
-
-- `id`: UUID (主键)
-- `name`: String (模型名称)
-- `model_type`: String (模型类型: technical/fundamental/machine_learning)
-- `description`: Text (模型描述)
-- `weight`: Decimal (投票权重，0-1)
-- `is_active`: Boolean (是否启用)
-- `performance_score`: Decimal (历史表现评分)
-- `last_trained_at`: DateTime (最后训练时间)
-- `created_at`: DateTime (创建时间)
-- `updated_at`: DateTime (更新时间)
-
-**关系**:
-
-- 一对多: AIModel → VoteResult (投票结果)
-- 一对多: AIModel → BacktestResult (回测结果)
-
-### 4. 决策实体 (Decision)
-
-代表系统生成的决策结果。
-
-**字段**:
-
-- `id`: UUID (主键)
-- `stock_id`: UUID (外键，关联 Stock)
-- `decision_type`: String (决策类型: buy/sell/hold)
-- `confidence`: Decimal (置信度，0-1)
-- `target_price`: Decimal (目标价格)
-- `stop_loss_price`: Decimal (止损价格)
-- `time_horizon`: Integer (时间周期，天数)
-- `reasoning`: Text (决策理由)
-- `generated_at`: DateTime (生成时间)
-- `expires_at`: DateTime (过期时间)
-- `created_at`: DateTime (创建时间)
-
-**关系**:
-
-- 一对多: Decision → VoteResult (投票详情)
-
-### 5. 投票结果实体 (VoteResult)
-
-存储多模型投票的详细结果。
-
-**字段**:
-
-- `id`: UUID (主键)
-- `decision_id`: UUID (外键，关联 Decision)
-- `model_id`: UUID (外键，关联 AIModel)
-- `vote_type`: String (投票类型: buy/sell/hold)
-- `confidence`: Decimal (模型置信度，0-1)
-- `signal_strength`: Decimal (信号强度，-1 到 1)
-- `reasoning`: Text (模型推理过程)
-- `created_at`: DateTime (创建时间)
-
-**索引**:
-
-- 复合索引: (decision_id, model_id)
-
-### 6. 回测结果实体 (BacktestResult)
-
-存储历史回测表现数据。
-
-**字段**:
-
-- `id`: UUID (主键)
-- `stock_id`: UUID (外键，关联 Stock)
-- `model_id`: UUID (外键，关联 AIModel)
-- `start_date`: Date (回测开始日期)
-- `end_date`: Date (回测结束日期)
-- `total_return`: Decimal (总收益率)
-- `annual_return`: Decimal (年化收益率)
-- `sharpe_ratio`: Decimal (夏普比率)
-- `max_drawdown`: Decimal (最大回撤)
-- `win_rate`: Decimal (胜率)
-- `profit_factor`: Decimal (盈利因子)
-- `total_trades`: Integer (总交易次数)
-- `avg_trade_return`: Decimal (平均交易收益率)
-- `created_at`: DateTime (创建时间)
-
-**索引**:
-
-- 复合索引: (stock_id, model_id, start_date, end_date)
-
-### 7. 交易记录实体 (TradeRecord)
-
-存储模拟交易记录。
-
-**字段**:
-
-- `id`: UUID (主键)
-- `stock_id`: UUID (外键，关联 Stock)
-- `decision_id`: UUID (外键，关联 Decision)
-- `trade_type`: String (交易类型: buy/sell)
-- `entry_price`: Decimal (入场价格)
-- `exit_price`: Decimal (出场价格)
-- `quantity`: Integer (交易数量)
-- `entry_date`: DateTime (入场时间)
-- `exit_date`: DateTime (出场时间)
-- `holding_period`: Integer (持有天数)
-- `return_amount`: Decimal (收益金额)
-- `return_percent`: Decimal (收益率)
-- `created_at`: DateTime (创建时间)
-
-## 数据验证规则
-
-### 股票数据验证
-
-- 股票代码必须符合市场规范格式
-- 价格数据必须为正数
-- 涨跌幅必须在合理范围内 (-50% 到 +50%)
-
-### 决策数据验证
-
-- 置信度必须在 0 到 1 之间
-- 目标价格必须高于当前价格 (买入) 或低于当前价格 (卖出)
-- 时间周期必须为正整数
-
-### 回测数据验证
-
-- 收益率数据必须合理
-- 夏普比率和最大回撤必须在合理范围内
-- 交易次数必须为非负整数
-
-## 状态转换
-
-### 决策状态机
-
-```
-pending → active → expired
-         ↘ executed
+interface EquityCurve {
+  name: string;
+  data: EquityPoint[];
+  color: string;
+}
 ```
 
-- `pending`: 决策生成但未执行
-- `active`: 决策有效期内
-- `expired`: 决策已过期
-- `executed`: 决策已执行交易
+**迁移策略**: 保持结构不变，调整渲染方式
 
-### 模型状态机
+### 2. 性能数据 (PerformanceData)
 
-```
-training → active → inactive
-         ↘ retraining
-```
+**现有结构**:
 
-- `training`: 模型正在训练
-- `active`: 模型已启用
-- `inactive`: 模型已停用
-- `retraining`: 模型正在重新训练
-
-## 数据关系图
-
-```
-Stock (1) ←→ (N) StockPrice
-Stock (1) ←→ (N) Decision
-Stock (1) ←→ (N) BacktestResult
-Stock (1) ←→ (N) TradeRecord
-
-AIModel (1) ←→ (N) VoteResult
-AIModel (1) ←→ (N) BacktestResult
-
-Decision (1) ←→ (N) VoteResult
-Decision (1) ←→ (N) TradeRecord
+```typescript
+interface PerformanceHistory {
+  date: string;
+  modelId: number;
+  modelName: string;
+  metrics: {
+    accuracy?: number;
+    precision?: number;
+    recall?: number;
+    f1Score?: number;
+    totalReturn?: number;
+    sharpeRatio?: number;
+    maxDrawdown?: number;
+  };
+}
 ```
 
-## 性能考虑
+**迁移策略**: 保持结构不变，调整数据聚合方式
 
-### 索引策略
+### 3. 投票数据 (VoteData)
 
-- 高频查询字段建立索引
-- 复合索引优化多条件查询
-- 分区表处理历史价格数据
+**现有结构**:
 
-### 数据归档
+```typescript
+interface ModelDecision {
+  modelId: number;
+  modelName: string;
+  decision: "BUY" | "SELL" | "HOLD";
+  confidence: number;
+  signalStrength: number;
+}
 
-- 历史价格数据按年分区
-- 旧决策数据定期归档
-- 回测结果数据长期保存
+interface VoteData {
+  decision: string;
+  count: number;
+  percentage: number;
+  color: string;
+}
+```
+
+**迁移策略**: 保持结构不变，调整图表渲染方式
+
+## 数据转换规则
+
+### 1. 净值曲线数据转换
+
+**Unovis 方式**:
+
+```typescript
+const chartData = computed<EquityData[]>(() => {
+  // 复杂的数据合并逻辑
+  const dateMap = new Map<string, EquityData>();
+  // ... 数据合并代码
+  return Array.from(dateMap.values());
+});
+
+const x = (d: EquityData) => d.date;
+const getCurveValue = (d: EquityData, curveName: string) => d[curveName] || 0;
+```
+
+**Ant Design Charts 方式**:
+
+```typescript
+const chartConfig = computed(() => {
+  return props.curves.map((curve) => ({
+    type: "line",
+    data: curve.data.map((point) => ({
+      date: new Date(point.date),
+      value: point.value,
+      name: curve.name,
+    })),
+    xField: "date",
+    yField: "value",
+    seriesField: "name",
+    color: curve.color,
+    smooth: true,
+  }));
+});
+```
+
+### 2. 性能数据转换
+
+**Unovis 方式**:
+
+```typescript
+const chartData = computed<PerformanceData[]>(() => {
+  // 按日期分组的数据聚合
+  const dateGroups = props.data.reduce((acc, item) => {
+    const date = new Date(item.date);
+    if (!acc[date.toISOString()]) {
+      acc[date.toISOString()] = { date } as PerformanceData;
+    }
+    acc[date.toISOString()][item.modelName] =
+      item.metrics[selectedMetric.value];
+    return acc;
+  }, {});
+  return Object.values(dateGroups);
+});
+```
+
+**Ant Design Charts 方式**:
+
+```typescript
+const chartConfig = computed(() => {
+  const metric = selectedMetric.value;
+  return {
+    data: props.data.map((item) => ({
+      date: new Date(item.date),
+      value: item.metrics[metric],
+      model: item.modelName,
+    })),
+    xField: "date",
+    yField: "value",
+    seriesField: "model",
+    color: ({ model }) => getModelColor(model),
+  };
+});
+```
+
+### 3. 投票数据转换
+
+**Unovis 方式**:
+
+```typescript
+const voteData = computed<VoteData[]>(() => {
+  const decisionCounts = props.data.reduce((acc, item) => {
+    acc[item.decision] = (acc[item.decision] || 0) + 1;
+    return acc;
+  }, {});
+
+  const total = props.data.length;
+  return Object.entries(decisionCounts).map(([decision, count]) => ({
+    decision,
+    count,
+    percentage: (count / total) * 100,
+    color: decisionColors[decision],
+  }));
+});
+```
+
+**Ant Design Charts 方式**:
+
+```typescript
+const chartConfig = computed(() => {
+  const decisionCounts = props.data.reduce((acc, item) => {
+    acc[item.decision] = (acc[item.decision] || 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    data: Object.entries(decisionCounts).map(([decision, count]) => ({
+      decision,
+      count,
+      color: decisionColors[decision],
+    })),
+    xField: "decision",
+    yField: "count",
+    colorField: "color",
+    label: {
+      position: "middle",
+      style: {
+        fill: "#fff",
+      },
+    },
+  };
+});
+```
+
+## 配置对象映射
+
+### 通用配置映射
+
+| Unovis 配置         | Ant Design Charts 配置  | 说明               |
+| ------------------- | ----------------------- | ------------------ |
+| `:data`             | `data`                  | 数据源             |
+| `:x` 函数           | `xField`                | X 轴字段           |
+| `:y` 函数           | `yField`                | Y 轴字段           |
+| `:color` 函数       | `colorField` 或 `color` | 颜色字段或固定颜色 |
+| `VisAxis` 组件      | 内置轴配置              | 自动配置坐标轴     |
+| `VisTooltip` 组件   | 内置提示框              | 自动显示提示信息   |
+| `VisCrosshair` 组件 | 内置十字准星            | 鼠标悬停显示十字线 |
+
+### 交互配置映射
+
+| 交互功能 | Unovis 方式         | Ant Design Charts 方式   |
+| -------- | ------------------- | ------------------------ |
+| 工具提示 | `VisTooltip` 组件   | 内置 `tooltip` 配置      |
+| 十字准星 | `VisCrosshair` 组件 | 内置 `crosshair` 配置    |
+| 图例     | `VisLegend` 组件    | 内置 `legend` 配置       |
+| 数据筛选 | 自定义逻辑          | 内置 `interactions` 配置 |
+
+## 样式和主题
+
+### 颜色映射
+
+保持现有颜色系统不变：
+
+```typescript
+const decisionColors = {
+  BUY: "var(--color-emerald-500)",
+  SELL: "var(--color-red-500)",
+  HOLD: "var(--color-amber-500)",
+};
+
+const modelColors = [
+  "var(--color-primary-500)",
+  "var(--color-emerald-500)",
+  "var(--color-amber-500)",
+  // ... 其他颜色
+];
+```
+
+### 主题配置
+
+创建统一的主题配置：
+
+```typescript
+const chartTheme = {
+  // 与 UnoCSS 主题保持一致
+  colors10: [
+    "var(--color-primary-500)",
+    "var(--color-emerald-500)",
+    "var(--color-amber-500)",
+    "var(--color-red-500)",
+    "var(--color-purple-500)",
+  ],
+  // 其他主题配置...
+};
+```
+
+## 迁移验证标准
+
+### 功能对等性验证
+
+1. **数据准确性**: 图表显示的数据与源数据一致
+2. **交互完整性**: 工具提示、十字准星等交互功能正常工作
+3. **响应式设计**: 图表在不同屏幕尺寸下正常显示
+4. **性能表现**: 图表渲染和交互响应时间符合要求
+
+### 视觉一致性验证
+
+1. **颜色一致**: 图表颜色与现有 UI 保持一致
+2. **样式统一**: 字体、间距等样式元素统一
+3. **动画流畅**: 过渡动画流畅自然
+4. **无障碍性**: 支持键盘导航和屏幕阅读器

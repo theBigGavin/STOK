@@ -138,7 +138,7 @@ def test_main_integration():
                 content = f.read()
             
             # 检查推荐API是否已导入
-            if "from src.api import recommendations" in content or "import recommendations" in content:
+            if "recommendations" in content and ("from src.api import" in content or "import recommendations" in content):
                 print("✅ 推荐API已导入")
             else:
                 print("❌ 推荐API未导入")

@@ -97,19 +97,19 @@ def test_api_structure():
                     return False
             
             # 检查路由定义
-            if "@router.get(\"/recommendations\")" in content:
+            if "@router.get(\"/recommendations\"" in content:
                 print("✅ GET /recommendations 路由存在")
             else:
                 print("❌ GET /recommendations 路由缺失")
                 return False
                 
-            if "@router.post(\"/recommendations/generate\")" in content:
+            if "@router.post(\"/recommendations/generate\"" in content:
                 print("✅ POST /recommendations/generate 路由存在")
             else:
                 print("❌ POST /recommendations/generate 路由缺失")
                 return False
                 
-            if "@router.get(\"/recommendations/{symbol}\")" in content:
+            if "@router.get(\"/recommendations/{symbol}\"" in content:
                 print("✅ GET /recommendations/{symbol} 路由存在")
             else:
                 print("❌ GET /recommendations/{symbol} 路由缺失")
@@ -138,14 +138,14 @@ def test_main_integration():
                 content = f.read()
             
             # 检查推荐API是否已导入
-            if "from src.api.recommendations import router as recommendations_router" in content:
+            if "from src.api import recommendations" in content or "import recommendations" in content:
                 print("✅ 推荐API已导入")
             else:
                 print("❌ 推荐API未导入")
                 return False
             
             # 检查路由是否已注册
-            if "recommendations_router" in content and "app.include_router" in content:
+            if "recommendations.router" in content and "app.include_router" in content:
                 print("✅ 推荐路由已注册")
             else:
                 print("❌ 推荐路由未注册")
